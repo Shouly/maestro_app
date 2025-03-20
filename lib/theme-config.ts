@@ -1,7 +1,7 @@
 import { STORAGE_KEYS } from './config';
 
 // 主题类型
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark';
 
 // 主题工具函数
 export const getSystemTheme = (): 'light' | 'dark' => {
@@ -27,4 +27,4 @@ export const initTheme = (): void => {
   // 设置CSS变量
   document.documentElement.style.setProperty('--primary-hue', '217');
   document.documentElement.style.setProperty('--primary-saturation', '100%');
-}; 
+};

@@ -129,9 +129,6 @@ export function ChatInput() {
           )}
         </Button>
       </div>
-      <div className="mt-2 text-center text-xs text-muted-foreground">
-        AI助手可能会产生不准确的信息。
-      </div>
     </div>
   );
 } 
