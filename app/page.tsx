@@ -27,7 +27,7 @@ export default function Home() {
   async function greet() {
     try {
       // 调用Tauri的Rust函数
-      const message = await invoke('greet', { name });
+      const message = await invoke('greet', { name }) as string;
       setGreetMsg(message);
       setLastGreeting(message);
     } catch (error) {
