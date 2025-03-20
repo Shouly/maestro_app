@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -8,24 +8,41 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageContainer } from '@/components/layout/page-container';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { useAppStore } from '@/lib/store';
 
 export default function Home() {
   const [greetMsg, setGreetMsg] = useState('');
   const [name, setName] = useState('');
+  const { lastGreeting, setLastGreeting } = useAppStore();
+
+  // 恢复上次的问候
+  useEffect(() => {
+    if (lastGreeting) {
+      setGreetMsg(lastGreeting);
+    }
+  }, [lastGreeting]);
 
   async function greet() {
-    // 调用Tauri的Rust函数
-    setGreetMsg(await invoke('greet', { name }));
+    try {
+      // 调用Tauri的Rust函数
+      const message = await invoke('greet', { name });
+      setGreetMsg(message);
+      setLastGreeting(message);
+    } catch (error) {
+      console.error('调用Rust函数出错:', error);
+      setGreetMsg('发生错误，请查看控制台');
+    }
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-10">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="z-10 max-w-5xl w-full flex flex-col items-center justify-center"
-      >
+    <PageContainer>
+      <div className="mb-4 flex justify-end">
+        <ThemeToggle />
+      </div>
+      
+      <div className="flex flex-col items-center">
         <h1 className="text-4xl font-bold mb-8 text-center">
           欢迎使用 Tauri + Next.js v15
         </h1>
@@ -108,7 +125,7 @@ export default function Home() {
             </CardFooter>
           )}
         </Card>
-      </motion.div>
-    </main>
+      </div>
+    </PageContainer>
   );
 } 
