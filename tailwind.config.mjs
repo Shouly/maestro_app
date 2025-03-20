@@ -15,6 +15,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['var(--font-montserrat)', 'Montserrat', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -64,15 +68,20 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+        '2xl': "calc(var(--radius) + 8px)",
       },
       boxShadow: {
-        'sm': '0 1px 2px 0 hsl(var(--primary) / 0.05)',
-        'DEFAULT': '0 1px 3px 0 hsl(var(--primary) / 0.1), 0 1px 2px -1px hsl(var(--primary) / 0.1)',
-        'md': '0 4px 6px -1px hsl(var(--primary) / 0.1), 0 2px 4px -2px hsl(var(--primary) / 0.1)',
-        'lg': '0 10px 15px -3px hsl(var(--primary) / 0.1), 0 4px 6px -4px hsl(var(--primary) / 0.1)',
-        'xl': '0 20px 25px -5px hsl(var(--primary) / 0.1), 0 8px 10px -6px hsl(var(--primary) / 0.1)',
-        '2xl': '0 25px 50px -12px hsl(var(--primary) / 0.25)',
-        'inner': 'inset 0 2px 4px 0 hsl(var(--primary) / 0.05)',
+        'sm': '0 2px 8px rgba(0, 0, 0, 0.08)',
+        'DEFAULT': '0 4px 12px rgba(0, 0, 0, 0.1)',
+        'md': '0 6px 16px rgba(0, 0, 0, 0.12)',
+        'lg': '0 8px 24px rgba(0, 0, 0, 0.12)',
+        'xl': '0 12px 32px rgba(0, 0, 0, 0.14)',
+        '2xl': '0 20px 48px rgba(0, 0, 0, 0.2)',
+        'inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)',
+        'canva-button': '0 2px 4px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.05)',
+        'canva-card': '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)',
+        'canva-hover': '0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06)',
       },
       keyframes: {
         "accordion-down": {
@@ -97,12 +106,46 @@ export default {
             animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)',
           },
         },
+        "float": {
+          '0%, 100%': {
+            transform: 'translateY(0)',
+          },
+          '50%': {
+            transform: 'translateY(-8px)',
+          },
+        },
+        "scale": {
+          '0%': { transform: 'scale(0.95)' },
+          '100%': { transform: 'scale(1)' },
+        },
+        "fade-in": {
+          '0%': { opacity: 0 },
+          '100%': { opacity: 1 },
+        },
+        "slide-in-right": {
+          '0%': { transform: 'translateX(100%)', opacity: 0 },
+          '100%': { transform: 'translateX(0)', opacity: 1 },
+        },
+        "slide-in-left": {
+          '0%': { transform: 'translateX(-100%)', opacity: 0 },
+          '100%': { transform: 'translateX(0)', opacity: 1 },
+        },
+        "typing": {
+          from: { width: '0' },
+          to: { width: '100%' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse": "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "bounce": "bounce 1s infinite",
+        "float": "float 3s ease-in-out infinite",
+        "scale": "scale 0.15s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        "slide-in-right": "slide-in-right 0.3s ease-out",
+        "slide-in-left": "slide-in-left 0.3s ease-out",
+        "typing": "typing 1.5s steps(30, end)",
       },
       spacing: {
         '4.5': '1.125rem',

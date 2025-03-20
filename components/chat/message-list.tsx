@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useChatStore, Message } from '@/lib/chat-store';
-import { Bot, User } from 'lucide-react';
+import { Bot, User, Sparkles } from 'lucide-react';
 
 export function MessageList() {
   const { getActiveConversation } = useChatStore();
@@ -23,9 +23,11 @@ export function MessageList() {
   if (!conversation) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-        <Bot className="mb-4 h-12 w-12 text-muted-foreground" />
-        <h3 className="mb-2 text-xl font-medium">开始一个新对话</h3>
-        <p className="mb-8 max-w-md text-muted-foreground">
+        <div className="rounded-full bg-primary/10 p-4 mb-6 animate-float">
+          <Sparkles className="h-12 w-12 text-primary" />
+        </div>
+        <h3 className="mb-3 text-2xl font-bold font-display">开始一个新对话</h3>
+        <p className="mb-8 max-w-md text-muted-foreground leading-relaxed">
           创建一个新的对话，开始与AI助手交流。您可以询问任何问题，获取帮助或者探索新想法。
         </p>
       </div>
@@ -36,9 +38,11 @@ export function MessageList() {
   if (conversation.messages.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-        <Bot className="mb-4 h-12 w-12 text-muted-foreground" />
-        <h3 className="mb-2 text-xl font-medium">开始对话</h3>
-        <p className="mb-8 max-w-md text-muted-foreground">
+        <div className="rounded-full bg-primary/10 p-4 mb-6 animate-float">
+          <Bot className="h-12 w-12 text-primary" />
+        </div>
+        <h3 className="mb-3 text-2xl font-bold font-display">开始对话</h3>
+        <p className="mb-8 max-w-md text-muted-foreground leading-relaxed">
           在下方输入框中提出您的问题或者描述您需要帮助的内容。
         </p>
       </div>
@@ -46,9 +50,14 @@ export function MessageList() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-8">
-      {conversation.messages.map((message) => (
-        <MessageItem key={message.id} message={message} />
+    <div className="flex flex-1 flex-col gap-8 overflow-y-auto p-4 md:p-8">
+      {conversation.messages.map((message, index) => (
+        <MessageItem 
+          key={message.id} 
+          message={message} 
+          isFirst={index === 0}
+          isLast={index === conversation.messages.length - 1}
+        />
       ))}
       <div ref={messagesEndRef} />
     </div>
@@ -57,39 +66,41 @@ export function MessageList() {
 
 interface MessageItemProps {
   message: Message;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
-function MessageItem({ message }: MessageItemProps) {
+function MessageItem({ message, isFirst, isLast }: MessageItemProps) {
   const isUser = message.role === 'user';
 
   return (
     <div
       className={`flex items-start gap-4 ${
         isUser ? 'justify-end' : 'justify-start'
-      }`}
+      } ${isLast ? 'animate-fade-in' : ''}`}
     >
       {!isUser && (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Bot size={16} />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+          <Bot size={20} />
         </div>
       )}
       <div
-        className={`rounded-lg px-4 py-3 max-w-[80%] ${
+        className={`rounded-2xl px-5 py-3.5 max-w-[80%] shadow-sm ${
           isUser
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted'
+            ? 'bg-primary text-primary-foreground rounded-tr-sm'
+            : 'bg-muted/80 backdrop-blur-sm rounded-tl-sm'
         }`}
       >
-        <p className="whitespace-pre-wrap break-words text-sm">
+        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
           {message.content}
         </p>
-        <div className={`mt-1 text-xs ${isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+        <div className={`mt-2 text-xs ${isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
           {new Date(message.timestamp).toLocaleTimeString()}
         </div>
       </div>
       {isUser && (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <User size={16} />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+          <User size={20} />
         </div>
       )}
     </div>

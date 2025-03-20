@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/lib/chat-store';
-import { Send, XCircle, Loader2, Mic, Plus } from 'lucide-react';
+import { XCircle, Loader2, Mic, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // 模拟AI响应
@@ -82,11 +82,19 @@ export function ChatInput() {
   };
 
   return (
-    <div className="border-t bg-background p-4">
-      <div className="mx-auto flex max-w-3xl items-end gap-2">
-        <Button variant="outline" size="icon" title="附加文件">
+    <div className="bg-background p-5">
+      <div className="mx-auto flex max-w-3xl items-end gap-3 relative">
+        <div className="absolute -top-20 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
+        
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="rounded-full shadow-sm hover:shadow transition-all duration-200"
+          title="附加文件"
+        >
           <Plus className="h-4 w-4" />
         </Button>
+        
         <div className="relative flex-1">
           <textarea
             ref={textareaRef}
@@ -94,39 +102,45 @@ export function ChatInput() {
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="输入消息，Ctrl+Enter 发送"
-            className="h-10 max-h-[200px] min-h-[40px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-12 max-h-[200px] min-h-[48px] w-full resize-none rounded-xl border-2 border-input bg-background px-4 py-3 text-sm shadow-sm transition-all duration-200 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-ring hover:border-primary/50"
             disabled={isLoading}
           />
           {message && (
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-10 top-1/2 -translate-y-1/2"
+              className="absolute right-12 top-1/2 -translate-y-1/2 rounded-full opacity-70 hover:opacity-100 transition-opacity"
               onClick={() => setMessage('')}
               title="清空"
             >
-              <XCircle className="h-4 w-4" />
+              <XCircle className="h-5 w-5" />
             </Button>
           )}
         </div>
+        
         <Button 
           variant="outline" 
           size="icon" 
           disabled={isLoading}
+          className="rounded-full shadow-sm hover:shadow transition-all duration-200"
           title="语音输入"
         >
           <Mic className="h-4 w-4" />
         </Button>
+        
         <Button
+          variant="canva"
           onClick={handleSendMessage}
           disabled={!message.trim() || isLoading}
+          className="rounded-full px-5 h-12 transition-all duration-300"
           title="发送消息"
         >
           {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin mr-2" />
           ) : (
-            <Send className="h-4 w-4" />
+            <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
           )}
+          {isLoading ? '思考中...' : '发送'}
         </Button>
       </div>
     </div>
