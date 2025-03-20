@@ -163,7 +163,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
 
             {/* 侧边栏 */}
             <motion.div
-              className="fixed left-0 z-20 w-64 bg-card my-2 rounded-r-lg border-r border-t border-b border-border"
+              className="fixed left-0 z-20 w-64 bg-card/90 my-2 rounded-r-lg border-r border-t border-b border-border"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
@@ -176,7 +176,8 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
               }}
               style={{ 
                 height: 'calc(100% - 1rem)',
-                bottom: '0.25rem'
+                bottom: '0.25rem',
+                backdropFilter: 'blur(4px)'
               }}
               onMouseEnter={() => {
                 if (hoverTimerRef.current) {
