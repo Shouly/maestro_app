@@ -12,11 +12,19 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ sidebar, children }: AppLayoutProps) {
-  const { sidebarOpen, setSidebarOpen } = useAppStore();
+  const { sidebarOpen, setSidebarOpen, isFirstVisit, setFirstVisit } = useAppStore();
   const [mounted, setMounted] = useState(false);
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isTransitioningRef = useRef(false);
   const preventCloseRef = useRef(false);
+
+  // 首次挂载时强制关闭侧边栏
+  useEffect(() => {
+    if (isFirstVisit) {
+      setSidebarOpen(false);
+      setFirstVisit(false);
+    }
+  }, [isFirstVisit, setSidebarOpen, setFirstVisit]);
 
   // 处理窗口尺寸变化
   useEffect(() => {
@@ -38,14 +46,6 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
 
   // 为组件添加防止关闭的方法
   useEffect(() => {
-    const handleMouseEnterSidebar = () => {
-      preventCloseRef.current = true;
-      if (hoverTimerRef.current) {
-        clearTimeout(hoverTimerRef.current);
-        hoverTimerRef.current = null;
-      }
-    };
-
     const handleCustomEvent = (e: Event) => {
       const customEvent = e as CustomEvent;
       if (customEvent.detail?.preventClose) {

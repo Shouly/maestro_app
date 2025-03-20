@@ -7,6 +7,8 @@ interface AppState {
   sidebarOpen: boolean;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
+  isFirstVisit: boolean;
+  setFirstVisit: (isFirst: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -17,6 +19,8 @@ export const useAppStore = create<AppState>()(
       sidebarOpen: false,
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
+      isFirstVisit: true,
+      setFirstVisit: (isFirst) => set({ isFirstVisit: isFirst }),
     }),
     {
       name: 'maestro-app-storage',
