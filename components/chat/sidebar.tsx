@@ -108,9 +108,9 @@ export function ChatSidebar() {
       <div className="px-4 py-2">
         <Button 
           onClick={handleNewChat} 
-          className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 shadow-canva-button transition-all duration-200 hover:shadow-md hover:translate-y-[-1px]"
+          className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 shadow-sm transition-all duration-200 hover:shadow-md hover:translate-y-[-1px]"
           size="sm"
-          variant="canva"
+          variant="default"
         >
           <Sparkles size={14} className="animate-pulse" />
           新对话
@@ -187,7 +187,7 @@ export function ChatSidebar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent 
             align="start" 
-            className="w-56 rounded-xl shadow-canva-card p-1 animate-fade-in"
+            className="w-56 rounded-xl shadow-md p-1 animate-fade-in"
             // 确保下拉菜单显示时不关闭侧边栏
             onCloseAutoFocus={(e) => {
               e.preventDefault();

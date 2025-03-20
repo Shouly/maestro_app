@@ -139,7 +139,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
       {/* 固定的头像按钮 - 当侧边栏关闭时显示 */}
       {!sidebarOpen && (
         <button
-          className="fixed left-4 bottom-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-canva-button hover:bg-primary/90 hover:translate-y-[-2px] transition-all duration-300"
+          className="fixed left-4 bottom-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:translate-y-[-2px] transition-all duration-300"
           onClick={() => toggleSidebar(true)}
           aria-label="打开侧边栏"
         >

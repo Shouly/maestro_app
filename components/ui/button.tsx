@@ -10,16 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-canva-button hover:shadow-md hover:translate-y-[-1px] hover:bg-primary/90 active:translate-y-[1px] active:shadow-sm",
+          "bg-primary text-primary-foreground shadow-sm hover:shadow-md hover:translate-y-[-1px] hover:bg-primary/90 active:translate-y-[1px] active:shadow-sm",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-canva-button hover:shadow-md hover:translate-y-[-1px] hover:bg-destructive/90 active:translate-y-[1px] active:shadow-sm",
+          "bg-destructive text-destructive-foreground shadow-sm hover:shadow-md hover:translate-y-[-1px] hover:bg-destructive/90 active:translate-y-[1px] active:shadow-sm",
         outline:
           "border-2 border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:translate-y-[-1px] active:translate-y-[1px] active:shadow-sm",
         secondary:
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md hover:translate-y-[-1px] active:translate-y-[1px] active:shadow-sm",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        canva: "bg-primary text-primary-foreground shadow-canva-button hover:shadow-md hover:translate-y-[-1px] hover:scale-[1.02] hover:bg-primary/90 active:translate-y-[1px] active:shadow-sm active:scale-[0.98]",
       },
       size: {
         default: "h-10 px-5 py-2",
