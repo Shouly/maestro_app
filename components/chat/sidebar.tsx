@@ -47,7 +47,8 @@ export function ChatSidebar() {
       <div className="px-3 py-2">
         <Button 
           onClick={handleNewChat} 
-          className="w-full justify-start gap-2"
+          className="w-full justify-start gap-2 bg-primary hover:bg-primary/90"
+          size="sm"
         >
           <Plus size={16} />
           新对话
@@ -56,34 +57,40 @@ export function ChatSidebar() {
 
       {/* 对话列表 */}
       <div className="flex-1 overflow-auto px-3 py-2">
-        <h2 className="mb-2 px-1 text-xs font-medium text-muted-foreground">
+        <h2 className="mb-2 px-1 text-xs font-semibold text-muted-foreground">
           对话历史
         </h2>
         <div className="space-y-1">
           {conversations.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-muted-foreground pt-4">
               暂无对话记录
             </p>
           ) : (
             conversations.map((conversation) => (
-              <button
+              <div
                 key={conversation.id}
-                onClick={() => handleSelectConversation(conversation.id)}
-                className={`w-full truncate rounded-md px-3 py-2 text-left text-sm ${
+                className={`group relative flex items-center w-full rounded-md ${
                   activeConversationId === conversation.id
                     ? 'bg-accent text-accent-foreground'
                     : 'hover:bg-accent/50'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="truncate">{conversation.title}</span>
-                  <Trash2
-                    size={14}
-                    className="opacity-0 hover:text-destructive group-hover:opacity-100"
-                    onClick={(e) => handleDeleteConversation(e, conversation.id)}
-                  />
-                </div>
-              </button>
+                <button
+                  onClick={() => handleSelectConversation(conversation.id)}
+                  className="truncate px-3 py-2 text-left text-sm w-full"
+                >
+                  <span className="truncate block">{conversation.title}</span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 mr-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => handleDeleteConversation(e, conversation.id)}
+                  title="删除对话"
+                >
+                  <Trash2 size={14} className="text-muted-foreground hover:text-destructive" />
+                </Button>
+              </div>
             ))
           )}
         </div>

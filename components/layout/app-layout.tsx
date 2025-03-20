@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from '@/lib/config';
+import { User } from 'lucide-react';
 
 interface AppLayoutProps {
   sidebar: React.ReactNode;
@@ -13,7 +14,6 @@ interface AppLayoutProps {
 export function AppLayout({ sidebar, children }: AppLayoutProps) {
   const { sidebarOpen, setSidebarOpen } = useAppStore();
   const [mounted, setMounted] = useState(false);
-  const [hoverTimer, setHoverTimer] = useState<NodeJS.Timeout | null>(null);
 
   // 处理窗口尺寸变化
   useEffect(() => {
@@ -28,31 +28,12 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
     
     return () => {
       window.removeEventListener('resize', handleResize);
-      // 清除定时器
-      if (hoverTimer) clearTimeout(hoverTimer);
     };
-  }, [sidebarOpen, setSidebarOpen, hoverTimer]);
+  }, [sidebarOpen, setSidebarOpen]);
 
-  // 处理鼠标进入左侧区域
-  const handleMouseEnter = () => {
-    if (hoverTimer) clearTimeout(hoverTimer);
-    
-    // 延迟打开侧边栏，避免用户无意识触发
-    const timer = setTimeout(() => {
-      setSidebarOpen(true);
-    }, 200);
-    setHoverTimer(timer);
-  };
-
-  // 处理鼠标离开侧边栏区域
-  const handleMouseLeave = () => {
-    if (hoverTimer) clearTimeout(hoverTimer);
-    
-    // 延迟关闭侧边栏，避免用户无意识触发
-    const timer = setTimeout(() => {
-      setSidebarOpen(false);
-    }, 500);
-    setHoverTimer(timer);
+  // 切换侧边栏状态
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
   // 等待客户端挂载，避免水合错误
@@ -65,12 +46,16 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
         {children}
       </div>
 
-      {/* 左侧触发区域 - 用于鼠标悬停 */}
-      <div 
-        className="fixed left-0 top-0 h-full w-4 z-30"
-        onMouseEnter={handleMouseEnter}
-        aria-hidden="true"
-      />
+      {/* 固定的头像按钮 - 当侧边栏关闭时显示 */}
+      {!sidebarOpen && (
+        <button
+          className="fixed left-4 bottom-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition-all"
+          onClick={toggleSidebar}
+          aria-label="打开侧边栏"
+        >
+          <User size={18} />
+        </button>
+      )}
 
       {/* 使用Framer Motion实现侧边栏动画 */}
       <AnimatePresence>
@@ -82,7 +67,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               onClick={() => setSidebarOpen(false)}
             />
 
@@ -92,9 +77,12 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              onMouseEnter={() => clearTimeout(hoverTimer as NodeJS.Timeout)}
-              onMouseLeave={handleMouseLeave}
+              transition={{ 
+                type: "spring", 
+                stiffness: 300, 
+                damping: 30,
+                duration: 0.2 
+              }}
             >
               {/* 侧边栏标题 - 与header标题保持一致 */}
               <div className="h-14 flex items-center px-4 border-b">
