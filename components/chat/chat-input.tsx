@@ -129,7 +129,7 @@ export function ChatInput() {
         </Button>
         
         <Button
-          variant="canva"
+          variant="default"
           onClick={handleSendMessage}
           disabled={!message.trim() || isLoading}
           className="rounded-full px-5 h-12 transition-all duration-300"
