@@ -54,4 +54,5 @@ export const STORAGE_KEYS = {
   AUTH: 'maestro-auth-storage',
   APP: 'maestro-app-storage',
   THEME: 'maestro-theme',
+  CHAT: 'maestro-chat-storage',
 }; 

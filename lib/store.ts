@@ -14,7 +14,7 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       lastGreeting: '',
       setLastGreeting: (greeting) => set({ lastGreeting: greeting }),
-      sidebarOpen: true,
+      sidebarOpen: false,
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
     }),

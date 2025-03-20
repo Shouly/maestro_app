@@ -84,7 +84,13 @@ bun run tauri build
    - 自动检查用户登录状态
    - 详细文档: [登录流程](./docs/login-flow.md)
 
-2. **主题切换**
+2. **AI聊天界面**
+   - 类似Claude的聊天体验
+   - 多对话管理
+   - 响应式设计
+   - 详细文档: [聊天界面](./docs/chat-interface.md)
+
+3. **主题切换**
    - 支持亮色/暗色主题
    - 跟随系统设置
 
@@ -131,6 +137,11 @@ cargo tauri build
 maestro/
 ├── app/               # Next.js 页面
 ├── components/        # React 组件
+│   ├── auth/          # 认证相关组件
+│   ├── chat/          # 聊天界面组件
+│   ├── layout/        # 布局组件
+│   ├── theme/         # 主题相关组件
+│   └── ui/            # 基础UI组件
 ├── docs/              # 文档
 ├── lib/               # 工具和服务
 ├── public/            # 静态资源
