@@ -108,7 +108,7 @@ export function ChatSidebar() {
       <div className="px-4 py-2">
         <Button 
           onClick={handleNewChat} 
-          className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 transition-all duration-200"
+          className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 transition-all duration-200 font-medium"
           size="sm"
           variant="default"
         >
@@ -118,7 +118,7 @@ export function ChatSidebar() {
       </div>
 
       {/* 对话列表 */}
-      <div className="flex-1 overflow-auto px-4 py-3">
+      <div className="flex-1 overflow-auto px-4 py-3 mt-3">
         <h2 className="mb-3 px-1 text-xs text-primary font-semibold tracking-wide uppercase">
           对话历史
         </h2>
@@ -133,7 +133,7 @@ export function ChatSidebar() {
             conversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className={`group relative flex items-center w-full rounded-xl transition-all duration-150 ${
+                className={`group relative flex items-center w-full rounded-md transition-all duration-150 ${
                   activeConversationId === conversation.id
                     ? 'bg-secondary text-accent-foreground'
                     : 'hover:bg-secondary/50'
@@ -166,7 +166,7 @@ export function ChatSidebar() {
         <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
           <DropdownMenuTrigger asChild>
             <button 
-              className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 hover:bg-secondary/50 transition-all duration-150"
+              className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 hover:bg-secondary/50 transition-all duration-150 border border-border/50"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <User size={18} />
@@ -187,39 +187,42 @@ export function ChatSidebar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent 
             align="start" 
-            className="w-56 rounded-xl shadow-md p-1 animate-fade-in"
+            className="w-56 rounded-xl shadow-md p-1"
             // 确保下拉菜单显示时不关闭侧边栏
             onCloseAutoFocus={(e) => {
               e.preventDefault();
             }}
           >
             <DropdownMenuLabel className="font-display">我的账户</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSettings} className="rounded-lg cursor-pointer gap-2 py-1.5">
+            <DropdownMenuSeparator className="bg-card mx-2 h-px" />
+            <DropdownMenuItem onClick={handleSettings} className="rounded-md cursor-pointer gap-2 py-1.5">
               <Settings size={16} className="text-primary" />
               <span>设置</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg cursor-pointer gap-2 py-1.5">
+            <DropdownMenuSeparator className="bg-card mx-2 h-px" />
+            <DropdownMenuItem className="rounded-md cursor-pointer gap-2 py-1.5">
               <Languages size={16} className="text-primary" />
               <span>语言</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg cursor-pointer gap-2 py-1.5">
+            <DropdownMenuSeparator className="bg-card mx-2 h-px" />
+            <DropdownMenuItem className="rounded-md cursor-pointer gap-2 py-1.5">
               <ThemeToggle />
               <span>主题</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg cursor-pointer gap-2 py-1.5">
+            <DropdownMenuSeparator className="bg-card mx-2 h-px" />
+            <DropdownMenuItem className="rounded-md cursor-pointer gap-2 py-1.5">
               <Cloud size={16} className="text-primary" />
               <span>同步设置</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="rounded-lg cursor-pointer gap-2 py-1.5">
+            <DropdownMenuSeparator className="bg-card mx-2 h-px" />
+            <DropdownMenuItem className="rounded-md cursor-pointer gap-2 py-1.5">
               <LifeBuoy size={16} className="text-primary" />
               <span>帮助与支持</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-card mx-2 h-px" />
             <DropdownMenuItem 
               onClick={handleLogout}
-              className="rounded-lg cursor-pointer gap-2 text-destructive focus:text-destructive py-1.5"
+              className="rounded-md cursor-pointer gap-2 text-destructive focus:text-destructive py-1.5"
             >
               <LogOut size={16} />
               <span>注销</span>

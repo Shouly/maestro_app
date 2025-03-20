@@ -85,10 +85,10 @@ function MessageItem({ message, isFirst, isLast }: MessageItemProps) {
         </div>
       )}
       <div
-        className={`rounded-2xl px-5 py-3.5 max-w-[80%] ${
+        className={`rounded-2xl px-5 py-3.5 max-w-[80%] border ${
           isUser
-            ? 'bg-accent text-accent-foreground rounded-tr-sm'
-            : 'bg-muted backdrop-blur-sm rounded-tl-sm'
+            ? 'bg-accent text-accent-foreground rounded-tr-sm border-accent'
+            : 'bg-muted backdrop-blur-sm rounded-tl-sm border-border/50'
         }`}
       >
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
