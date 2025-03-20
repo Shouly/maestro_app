@@ -59,9 +59,6 @@ export default function Home() {
           <Link href="/dashboard">
             <Button>仪表盘</Button>
           </Link>
-          <Link href="/users/1">
-            <Button variant="outline">用户资料</Button>
-          </Link>
         </div>
 
         <div className="mb-8 w-full max-w-md">
