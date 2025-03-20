@@ -1,0 +1,11 @@
+[install]
+# Install exact version of packages
+exact = true
+
+[install.cache]
+# Store built packages in disk cache
+dir = ".bun/install/cache"
+
+[build]
+# Output directory for the Tauri bundled application
+outdir = "dist" 
