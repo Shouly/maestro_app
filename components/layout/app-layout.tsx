@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { APP_CONFIG } from '@/lib/config';
 
 interface AppLayoutProps {
