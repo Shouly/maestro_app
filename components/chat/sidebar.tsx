@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/auth';
 import { useChatStore } from '@/lib/chat-store';
 import { 
@@ -25,10 +25,14 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { useAppStore } from '@/lib/store';
 
 export function ChatSidebar() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { setSidebarOpen } = useAppStore();
+  
   const { 
     conversations, 
     activeConversationId, 
@@ -36,6 +40,29 @@ export function ChatSidebar() {
     setActiveConversation,
     deleteConversation 
   } = useChatStore();
+
+  // 当下拉菜单状态变化时，通知侧边栏组件
+  useEffect(() => {
+    // 发送自定义事件通知侧边栏组件，防止其关闭
+    const notifySidebar = () => {
+      window.dispatchEvent(
+        new CustomEvent('sidebar-control', {
+          detail: { preventClose: dropdownOpen }
+        })
+      );
+    };
+
+    notifySidebar();
+    
+    return () => {
+      // 组件卸载时，确保不再阻止侧边栏关闭
+      window.dispatchEvent(
+        new CustomEvent('sidebar-control', {
+          detail: { preventClose: false }
+        })
+      );
+    };
+  }, [dropdownOpen]);
 
   // 处理注销
   const handleLogout = () => {
@@ -62,6 +89,16 @@ export function ChatSidebar() {
   // 打开设置页面
   const handleSettings = () => {
     router.push('/settings');
+  };
+
+  // 处理下拉菜单状态变化
+  const handleDropdownOpenChange = (open: boolean) => {
+    setDropdownOpen(open);
+    
+    // 确保下拉菜单打开时侧边栏保持打开状态
+    if (open) {
+      setSidebarOpen(true);
+    }
   };
 
   return (
@@ -121,9 +158,11 @@ export function ChatSidebar() {
 
       {/* 底部用户信息区域 */}
       <div className="mt-auto border-t px-3 py-2">
-        <DropdownMenu>
+        <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 hover:bg-accent/50 transition-colors">
+            <button 
+              className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 hover:bg-accent/50 transition-colors"
+            >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <User size={16} />
               </div>
@@ -133,10 +172,22 @@ export function ChatSidebar() {
                   {user?.email || '未登录'}
                 </p>
               </div>
-              <ChevronUp size={14} className="text-muted-foreground" />
+              <ChevronUp 
+                size={14} 
+                className={`text-muted-foreground transition-transform duration-200 ${
+                  dropdownOpen ? 'rotate-180' : 'rotate-0'
+                }`} 
+              />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuContent 
+            align="start" 
+            className="w-56"
+            // 确保下拉菜单显示时不关闭侧边栏
+            onCloseAutoFocus={(e) => {
+              e.preventDefault();
+            }}
+          >
             <DropdownMenuLabel>我的账户</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSettings}>

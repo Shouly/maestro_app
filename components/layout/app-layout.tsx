@@ -16,6 +16,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
   const [mounted, setMounted] = useState(false);
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isTransitioningRef = useRef(false);
+  const preventCloseRef = useRef(false);
 
   // 处理窗口尺寸变化
   useEffect(() => {
@@ -34,6 +35,31 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     };
   }, [sidebarOpen, setSidebarOpen]);
+
+  // 为组件添加防止关闭的方法
+  useEffect(() => {
+    const handleMouseEnterSidebar = () => {
+      preventCloseRef.current = true;
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+    };
+
+    const handleCustomEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.preventClose) {
+        preventCloseRef.current = customEvent.detail.preventClose;
+      }
+    };
+
+    // 注册自定义事件，允许子组件控制侧边栏关闭行为
+    window.addEventListener('sidebar-control', handleCustomEvent);
+    
+    return () => {
+      window.removeEventListener('sidebar-control', handleCustomEvent);
+    };
+  }, []);
 
   // 切换侧边栏状态，添加状态锁防止动画期间重复触发
   const toggleSidebar = (open: boolean) => {
@@ -67,9 +93,18 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     if (!sidebarOpen) return; // 如果已经关闭，不执行任何操作
     
+    // 检查是否应该阻止关闭
+    if (preventCloseRef.current) {
+      preventCloseRef.current = false;
+      return;
+    }
+    
     // 延迟关闭侧边栏，避免用户频繁移动鼠标导致的抖动
     hoverTimerRef.current = setTimeout(() => {
-      toggleSidebar(false);
+      // 再次检查是否应该阻止关闭
+      if (!preventCloseRef.current) {
+        toggleSidebar(false);
+      }
       hoverTimerRef.current = null;
     }, 300);
   };
