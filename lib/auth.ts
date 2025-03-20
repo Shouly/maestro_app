@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { open } from '@tauri-apps/plugin-shell';
 import { AUTH_CONFIG, STORAGE_KEYS } from './config';
+import { useAppStore } from './store';
 
 // 定义认证状态的接口
 interface AuthState {
@@ -29,7 +30,11 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       lastChecked: 0,
-      login: (token, user) => set({ isLoggedIn: true, token, user }),
+      login: (token, user) => {
+        // 登录时同时关闭侧边栏
+        useAppStore.getState().setSidebarOpen(false);
+        set({ isLoggedIn: true, token, user });
+      },
       logout: () => set({ isLoggedIn: false, token: null, user: null }),
       setLastChecked: (time) => set({ lastChecked: time }),
     }),
@@ -93,6 +98,9 @@ export async function openLoginPage(): Promise<void> {
  * @returns Promise<boolean> 表示用户是否已登录
  */
 export async function handleAppStartup(): Promise<boolean> {
+  // 重置侧边栏状态，确保主页面加载时侧边栏始终关闭
+  useAppStore.getState().setSidebarOpen(false);
+  
   const isLoggedIn = await checkLoginStatus();
   
   if (!isLoggedIn) {

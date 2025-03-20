@@ -5,6 +5,7 @@ import { useAppStore } from '@/lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from '@/lib/config';
 import { User } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 interface AppLayoutProps {
   sidebar: React.ReactNode;
@@ -17,6 +18,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isTransitioningRef = useRef(false);
   const preventCloseRef = useRef(false);
+  const pathname = usePathname();
 
   // 首次挂载时强制关闭侧边栏
   useEffect(() => {
@@ -25,6 +27,12 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
       setFirstVisit(false);
     }
   }, [isFirstVisit, setSidebarOpen, setFirstVisit]);
+  
+  // 页面路径变化时关闭侧边栏
+  useEffect(() => {
+    // 页面加载或路径变化时，确保侧边栏关闭
+    setSidebarOpen(false);
+  }, [pathname, setSidebarOpen]);
 
   // 处理窗口尺寸变化
   useEffect(() => {
