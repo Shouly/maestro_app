@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/app/components/ui/card';
 
 export default function Home() {
   const [greetMsg, setGreetMsg] = useState('');
@@ -50,44 +52,62 @@ export default function Home() {
           </a>
         </div>
 
-        <p className="mb-8 text-center max-w-lg">
-          点击上方的 Next.js 和 Tauri 标志以了解更多。
-          使用 Tailwind CSS 和 shadcn/ui 组件库以及 Framer Motion 构建。
-        </p>
+        <Card className="w-full max-w-lg mb-8">
+          <CardHeader>
+            <CardTitle>关于</CardTitle>
+            <CardDescription>
+              这是一个使用现代技术栈构建的桌面应用
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4">
+              点击上方的 Next.js 和 Tauri 标志以了解更多。
+              使用 Tailwind CSS 和 shadcn/ui 组件库以及 Framer Motion 构建。
+            </p>
+            <div className="flex gap-4">
+              <Link href="/dashboard">
+                <Button>仪表盘</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="flex gap-4 mb-8">
-          <Link href="/dashboard">
-            <Button>仪表盘</Button>
-          </Link>
-        </div>
-
-        <div className="mb-8 w-full max-w-md">
-          <form
-            className="flex flex-col space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              greet();
-            }}
-          >
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder="输入你的名字..."
-            />
-            <Button type="submit">问候</Button>
-          </form>
-          {greetMsg && (
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-md"
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>问候示例</CardTitle>
+            <CardDescription>
+              尝试输入你的名字，体验Tauri与前端的交互
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="flex flex-col space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                greet();
+              }}
             >
-              {greetMsg}
-            </motion.p>
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="输入你的名字..."
+              />
+              <Button type="submit">问候</Button>
+            </form>
+          </CardContent>
+          {greetMsg && (
+            <CardFooter>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full p-4 bg-muted rounded-md"
+              >
+                {greetMsg}
+              </motion.p>
+            </CardFooter>
           )}
-        </div>
+        </Card>
       </motion.div>
     </main>
   );
