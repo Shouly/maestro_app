@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '@/lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from '@/lib/config';
@@ -14,6 +14,7 @@ interface AppLayoutProps {
 export function AppLayout({ sidebar, children }: AppLayoutProps) {
   const { sidebarOpen, setSidebarOpen } = useAppStore();
   const [mounted, setMounted] = useState(false);
+  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 处理窗口尺寸变化
   useEffect(() => {
@@ -28,12 +29,36 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
     
     return () => {
       window.removeEventListener('resize', handleResize);
+      // 清除定时器
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     };
   }, [sidebarOpen, setSidebarOpen]);
 
   // 切换侧边栏状态
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  // 处理鼠标进入左侧区域
+  const handleMouseEnter = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    
+    // 延迟打开侧边栏，避免用户无意识触发，但减少延迟时间
+    hoverTimerRef.current = setTimeout(() => {
+      setSidebarOpen(true);
+      hoverTimerRef.current = null;
+    }, 150);
+  };
+
+  // 处理鼠标离开侧边栏区域
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    
+    // 延迟关闭侧边栏，避免用户频繁移动鼠标导致的抖动
+    hoverTimerRef.current = setTimeout(() => {
+      setSidebarOpen(false);
+      hoverTimerRef.current = null;
+    }, 300);
   };
 
   // 等待客户端挂载，避免水合错误
@@ -45,6 +70,13 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
       <div className="w-full h-full">
         {children}
       </div>
+
+      {/* 左侧触发区域 - 用于鼠标悬停 */}
+      <div 
+        className="fixed left-0 top-0 h-full w-8 z-30"
+        onMouseEnter={handleMouseEnter}
+        aria-hidden="true"
+      />
 
       {/* 固定的头像按钮 - 当侧边栏关闭时显示 */}
       {!sidebarOpen && (
@@ -83,6 +115,13 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
                 damping: 30,
                 duration: 0.2 
               }}
+              onMouseEnter={() => {
+                if (hoverTimerRef.current) {
+                  clearTimeout(hoverTimerRef.current);
+                  hoverTimerRef.current = null;
+                }
+              }}
+              onMouseLeave={handleMouseLeave}
             >
               {/* 侧边栏标题 - 与header标题保持一致 */}
               <div className="h-14 flex items-center px-4 border-b">
