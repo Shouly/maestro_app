@@ -139,11 +139,11 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
       {/* 固定的头像按钮 - 当侧边栏关闭时显示 */}
       {!sidebarOpen && (
         <button
-          className="fixed left-4 bottom-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition-all"
+          className="fixed left-4 bottom-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-canva-button hover:bg-primary/90 hover:shadow-canva-md hover:translate-y-[-2px] transition-all duration-300"
           onClick={() => toggleSidebar(true)}
           aria-label="打开侧边栏"
         >
-          <User size={18} />
+          <User size={20} />
         </button>
       )}
 
@@ -153,7 +153,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
           <>
             {/* 遮罩层 */}
             <motion.div
-              className="fixed inset-0 z-10 bg-black/20"
+              className="fixed inset-0 z-10"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -163,16 +163,21 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
 
             {/* 侧边栏 */}
             <motion.div
-              className="fixed inset-y-0 left-0 z-20 w-64 bg-card shadow-lg"
+              className="fixed left-0 z-20 w-64 shadow-canva-lg bg-card my-2 rounded-r-2xl"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ 
                 type: "spring", 
-                stiffness: 250, // 减小弹性
-                damping: 25,   // 增加阻尼
-                mass: 1,       // 添加质量参数
+                stiffness: 250,
+                damping: 25,
+                mass: 1,
                 duration: 0.2  
+              }}
+              style={{ 
+                height: 'calc(100% - 1rem)',
+                // top: '0.25rem',
+                bottom: '0.25rem'
               }}
               onMouseEnter={() => {
                 if (hoverTimerRef.current) {
@@ -183,8 +188,8 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
               onMouseLeave={handleMouseLeave}
             >
               {/* 侧边栏标题 - 与header标题保持一致 */}
-              <div className="h-14 flex items-center px-4 border-b">
-                <h1 className="text-lg font-medium">{APP_CONFIG.APP_NAME}</h1>
+              <div className="h-14 flex items-center px-4">
+                <h1 className="text-lg font-medium font-display">{APP_CONFIG.APP_NAME}</h1>
               </div>
               
               {/* 侧边栏内容 */}

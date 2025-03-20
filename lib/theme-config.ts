@@ -1,4 +1,3 @@
-import { STORAGE_KEYS } from './config';
 
 // 主题类型
 export type Theme = 'light' | 'dark';
@@ -23,7 +22,7 @@ export const getThemeColor = (): string => {
  */
 export const initTheme = (): void => {
   if (typeof document === 'undefined') return;
-  
+
   // 设置CSS变量
   document.documentElement.style.setProperty('--primary-hue', '217');
   document.documentElement.style.setProperty('--primary-saturation', '100%');
