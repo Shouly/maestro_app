@@ -108,11 +108,11 @@ export function ChatSidebar() {
       <div className="px-4 py-2">
         <Button 
           onClick={handleNewChat} 
-          className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 shadow-sm transition-all duration-200 hover:shadow-md hover:translate-y-[-1px]"
+          className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 transition-all duration-200"
           size="sm"
           variant="default"
         >
-          <Sparkles size={14} className="animate-pulse" />
+          <Sparkles size={14} />
           新对话
         </Button>
       </div>
@@ -133,10 +133,10 @@ export function ChatSidebar() {
             conversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className={`group relative flex items-center w-full rounded-xl transition-all duration-150 animate-scale ${
+                className={`group relative flex items-center w-full rounded-xl transition-all duration-150 ${
                   activeConversationId === conversation.id
-                    ? 'bg-accent text-accent-foreground shadow-sm'
-                    : 'hover:bg-accent/50 hover:shadow-sm'
+                    ? 'bg-secondary text-accent-foreground'
+                    : 'hover:bg-secondary/50'
                 }`}
               >
                 <button
@@ -166,9 +166,9 @@ export function ChatSidebar() {
         <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
           <DropdownMenuTrigger asChild>
             <button 
-              className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 hover:bg-accent/50 transition-all duration-150 hover:shadow-sm"
+              className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 hover:bg-secondary/50 transition-all duration-150"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <User size={18} />
               </div>
               <div className="flex-1 truncate text-left">

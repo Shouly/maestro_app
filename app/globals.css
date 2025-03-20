@@ -4,31 +4,33 @@
  
 @layer base {
   :root {
-    /* 主色调 - 基于#d97757（HSL: 20, 65%, 60%）*/
-    --primary: 20 65% 60%;
-    --primary-light: 20 65% 72%;
-    --primary-dark: 20 72% 48%;
+    /* 主色调 - 基于#d97757 */
+    --primary: 20 65% 59%;  /* #d97757 */
+    --primary-light: 20 65% 70%;
+    --primary-dark: 20 70% 50%;
     --primary-foreground: 0 0% 100%;
     
-    /* 中性色调 - 更新为指定的背景色 */
-    --background: 40 30% 97%;  /* #faf9f5 - 米白色背景 */
+    /* 中性色调 - 指定的背景色 */
+    --background: 40 36% 97%;  /* #faf9f5 - 主背景色 */
     --foreground: 26 16% 5%;  /* #0f0e0c - 深褐黑色文字 */
     
-    /* 卡片和UI容器 - 增加微妙的阴影 */
-    --card: 44 20% 91%;  /* #edebe3 - 米灰色卡片背景 */
-    --card-foreground: 26 16% 5%;  /* #0f0e0c - 深褐黑色文字 */
-    --popover: 44 20% 91%;  /* #edebe3 - 米灰色弹出框背景 */
-    --popover-foreground: 26 16% 5%;  /* #0f0e0c - 深褐黑色文字 */
+    /* 侧边栏和UI容器 */
+    --card: 43 22% 89%;  /* #eae8e0 - 左侧弹出栏背景色 */
+    --card-foreground: 26 16% 5%;
+    --popover: 0 0% 100%;  /* #ffffff - 用户弹出框背景色 */
+    --popover-foreground: 26 16% 5%;
     
-    /* 辅助色调 - 温暖米色系 */
-    --secondary: 30 25% 92%;
-    --secondary-foreground: 26 16% 5%;  /* #0f0e0c - 深褐黑色文字 */
+    /* 选中状态 */
+    --secondary: 43 15% 84%;  /* #dedcd1 - 左侧弹出栏选中背景色 */
+    --secondary-foreground: 26 16% 5%;
     
-    /* 功能色调 - 温暖风格 */
-    --muted: 60 15% 99%;  /* #fcfcfa - 消息框背景色 */
+    /* 消息相关色调 */
+    --muted: 60 25% 98%;  /* #fcfcfa - AI回复消息背景色 */
     --muted-foreground: 26 10% 30%;
-    --accent: 43 15% 91%;  /* #e8e6dc - 选中框颜色 */
+    --accent: 43 22% 89%;  /* #eae8e0 - 我的消息背景色 */
     --accent-foreground: 26 16% 5%;
+    
+    /* 功能色调 */
     --success: 142 65% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 95% 60%;
@@ -36,11 +38,11 @@
     --destructive: 0 90% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    /* 边框和表单 - 温暖色系边框 */
-    --border: 43 15% 91%;  /* #e8e6dc - 选中框颜色用于边框 */
-    --input: 43 15% 91%;   /* #e8e6dc - 选中框颜色用于输入框 */
-    --input-background: 0 0% 100%;  /* #ffffff - 输入框背景色 */
-    --ring: 20 65% 60%;
+    /* 边框和表单 */
+    --border: 43 15% 87%;
+    --input: 43 15% 87%;
+    --input-background: 0 0% 100%;  /* #ffffff - 消息输入框背景色 */
+    --ring: 20 65% 59%;  /* #d97757 */
  
     /* 圆角半径 */
     --radius: 1rem;
@@ -58,9 +60,9 @@
     --foreground: 30 10% 95%;
     
     /* 卡片和UI容器暗色模式 */
-    --card: 44 15% 18%;  /* 暗色模式下的卡片背景 */
+    --card: 44 15% 18%;
     --card-foreground: 30 10% 95%;
-    --popover: 44 15% 18%;  /* 暗色模式下的弹出框背景 */
+    --popover: 44 15% 18%;
     --popover-foreground: 30 10% 95%;
     
     /* 辅助色调暗色模式 */
@@ -68,9 +70,9 @@
     --secondary-foreground: 30 10% 95%;
     
     /* 功能色调暗色模式 */
-    --muted: 20 15% 30%;  /* 暗色模式下的消息框背景 */
+    --muted: 20 15% 30%;
     --muted-foreground: 30 15% 70%;
-    --accent: 43 10% 30%;  /* 暗色模式下的选中框颜色 */
+    --accent: 43 10% 30%;
     --accent-foreground: 30 10% 95%;
     --success: 142 55% 40%;
     --success-foreground: 0 0% 100%;
@@ -80,9 +82,9 @@
     --destructive-foreground: 0 0% 100%;
     
     /* 边框和表单暗色模式 */
-    --border: 43 10% 30%;  /* 暗色模式下的边框颜色 */
-    --input: 43 10% 30%;   /* 暗色模式下的输入框颜色 */
-    --input-background: 20 15% 25%;  /* 暗色模式下的输入框背景 */
+    --border: 43 10% 30%;
+    --input: 43 10% 30%;
+    --input-background: 20 15% 25%;
     --ring: 20 55% 55%;
   }
 }
@@ -106,16 +108,4 @@
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
-}
-
-@layer utilities {
-  /* 浮动动效 */
-  .hover-float {
-    transition: transform 0.3s ease;
-  }
-  
-  .hover-float:hover {
-    transform: translateY(-4px);
-  }
-
 }

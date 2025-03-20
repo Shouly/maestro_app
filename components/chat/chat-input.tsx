@@ -89,7 +89,7 @@ export function ChatInput() {
         <Button 
           variant="outline" 
           size="icon" 
-          className="rounded-full shadow-sm hover:shadow transition-all duration-200"
+          className="rounded-full transition-all duration-200"
           title="附加文件"
         >
           <Plus className="h-4 w-4" />
@@ -122,7 +122,7 @@ export function ChatInput() {
           variant="outline" 
           size="icon" 
           disabled={isLoading}
-          className="rounded-full shadow-sm hover:shadow transition-all duration-200"
+          className="rounded-full transition-all duration-200"
           title="语音输入"
         >
           <Mic className="h-4 w-4" />
@@ -138,7 +138,7 @@ export function ChatInput() {
           {isLoading ? (
             <Loader2 className="h-5 w-5 animate-spin mr-2" />
           ) : (
-            <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
+            <Sparkles className="h-4 w-4 mr-2" />
           )}
           {isLoading ? '思考中...' : '发送'}
         </Button>

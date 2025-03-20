@@ -23,7 +23,7 @@ export function MessageList() {
   if (!conversation) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-        <div className="rounded-full bg-primary/10 p-4 mb-6 animate-float">
+        <div className="rounded-full bg-primary/10 p-4 mb-6">
           <Sparkles className="h-12 w-12 text-primary" />
         </div>
         <h3 className="mb-3 text-2xl font-bold font-display">开始一个新对话</h3>
@@ -38,7 +38,7 @@ export function MessageList() {
   if (conversation.messages.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-        <div className="rounded-full bg-primary/10 p-4 mb-6 animate-float">
+        <div className="rounded-full bg-primary/10 p-4 mb-6">
           <Bot className="h-12 w-12 text-primary" />
         </div>
         <h3 className="mb-3 text-2xl font-bold font-display">开始对话</h3>
@@ -77,18 +77,18 @@ function MessageItem({ message, isFirst, isLast }: MessageItemProps) {
     <div
       className={`flex items-start gap-4 ${
         isUser ? 'justify-end' : 'justify-start'
-      } ${isLast ? 'animate-fade-in' : ''}`}
+      }`}
     >
       {!isUser && (
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Bot size={20} />
         </div>
       )}
       <div
-        className={`rounded-2xl px-5 py-3.5 max-w-[80%] shadow-sm ${
+        className={`rounded-2xl px-5 py-3.5 max-w-[80%] ${
           isUser
             ? 'bg-accent text-accent-foreground rounded-tr-sm'
-            : 'bg-muted/80 backdrop-blur-sm rounded-tl-sm'
+            : 'bg-muted backdrop-blur-sm rounded-tl-sm'
         }`}
       >
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
@@ -99,7 +99,7 @@ function MessageItem({ message, isFirst, isLast }: MessageItemProps) {
         </div>
       </div>
       {isUser && (
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <User size={20} />
         </div>
       )}
