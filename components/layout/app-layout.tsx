@@ -15,6 +15,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
   const { sidebarOpen, setSidebarOpen } = useAppStore();
   const [mounted, setMounted] = useState(false);
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isTransitioningRef = useRef(false);
 
   // 处理窗口尺寸变化
   useEffect(() => {
@@ -34,18 +35,29 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
     };
   }, [sidebarOpen, setSidebarOpen]);
 
-  // 切换侧边栏状态
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  // 切换侧边栏状态，添加状态锁防止动画期间重复触发
+  const toggleSidebar = (open: boolean) => {
+    if (isTransitioningRef.current) return;
+    
+    if (open !== sidebarOpen) {
+      isTransitioningRef.current = true;
+      setSidebarOpen(open);
+      
+      // 动画结束后解锁状态
+      setTimeout(() => {
+        isTransitioningRef.current = false;
+      }, 250); // 略高于动画时间
+    }
   };
 
   // 处理鼠标进入左侧区域
   const handleMouseEnter = () => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    if (sidebarOpen) return; // 如果已经打开，不执行任何操作
     
-    // 延迟打开侧边栏，避免用户无意识触发，但减少延迟时间
+    // 延迟打开侧边栏，避免用户无意识触发
     hoverTimerRef.current = setTimeout(() => {
-      setSidebarOpen(true);
+      toggleSidebar(true);
       hoverTimerRef.current = null;
     }, 150);
   };
@@ -53,10 +65,11 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
   // 处理鼠标离开侧边栏区域
   const handleMouseLeave = () => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    if (!sidebarOpen) return; // 如果已经关闭，不执行任何操作
     
     // 延迟关闭侧边栏，避免用户频繁移动鼠标导致的抖动
     hoverTimerRef.current = setTimeout(() => {
-      setSidebarOpen(false);
+      toggleSidebar(false);
       hoverTimerRef.current = null;
     }, 300);
   };
@@ -71,18 +84,20 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
         {children}
       </div>
 
-      {/* 左侧触发区域 - 用于鼠标悬停 */}
-      <div 
-        className="fixed left-0 top-0 h-full w-8 z-30"
-        onMouseEnter={handleMouseEnter}
-        aria-hidden="true"
-      />
+      {/* 左侧触发区域 - 用于鼠标悬停，只在侧边栏关闭时激活 */}
+      {!sidebarOpen && (
+        <div 
+          className="fixed left-0 top-0 h-full w-8 z-30"
+          onMouseEnter={handleMouseEnter}
+          aria-hidden="true"
+        />
+      )}
 
       {/* 固定的头像按钮 - 当侧边栏关闭时显示 */}
       {!sidebarOpen && (
         <button
           className="fixed left-4 bottom-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition-all"
-          onClick={toggleSidebar}
+          onClick={() => toggleSidebar(true)}
           aria-label="打开侧边栏"
         >
           <User size={18} />
@@ -100,7 +115,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              onClick={() => setSidebarOpen(false)}
+              onClick={() => toggleSidebar(false)}
             />
 
             {/* 侧边栏 */}
@@ -111,9 +126,10 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
               exit={{ x: "-100%" }}
               transition={{ 
                 type: "spring", 
-                stiffness: 300, 
-                damping: 30,
-                duration: 0.2 
+                stiffness: 250, // 减小弹性
+                damping: 25,   // 增加阻尼
+                mass: 1,       // 添加质量参数
+                duration: 0.2  
               }}
               onMouseEnter={() => {
                 if (hoverTimerRef.current) {
