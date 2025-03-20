@@ -87,14 +87,14 @@ function MessageItem({ message, isFirst, isLast }: MessageItemProps) {
       <div
         className={`rounded-2xl px-5 py-3.5 max-w-[80%] shadow-sm ${
           isUser
-            ? 'bg-primary text-primary-foreground rounded-tr-sm'
+            ? 'bg-[hsl(var(--user-message))] text-[hsl(var(--user-message-foreground))] rounded-tr-sm'
             : 'bg-muted/80 backdrop-blur-sm rounded-tl-sm'
         }`}
       >
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
           {message.content}
         </p>
-        <div className={`mt-2 text-xs ${isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+        <div className={`mt-2 text-xs ${isUser ? 'text-[hsl(var(--user-message-foreground))]/70' : 'text-muted-foreground'}`}>
           {new Date(message.timestamp).toLocaleTimeString()}
         </div>
       </div>

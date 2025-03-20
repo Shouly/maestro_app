@@ -1,4 +1,3 @@
-
 // 主题类型
 export type Theme = 'light' | 'dark';
 
@@ -9,11 +8,11 @@ export const getSystemTheme = (): 'light' | 'dark' => {
 };
 
 /**
- * 获取基于#126dff的主题颜色
- * @returns 主色调HSL值
+ * 获取主题颜色
+ * @returns 主色调颜色值
  */
 export const getThemeColor = (): string => {
-  return '#126dff';
+  return '#d97757';
 };
 
 /**
@@ -23,7 +22,7 @@ export const getThemeColor = (): string => {
 export const initTheme = (): void => {
   if (typeof document === 'undefined') return;
 
-  // 设置CSS变量
-  document.documentElement.style.setProperty('--primary-hue', '217');
-  document.documentElement.style.setProperty('--primary-saturation', '100%');
+  // 设置CSS变量 - 基于#d97757（HSL: 20, 65%, 60%）
+  document.documentElement.style.setProperty('--primary-hue', '20');
+  document.documentElement.style.setProperty('--primary-saturation', '65%');
 };

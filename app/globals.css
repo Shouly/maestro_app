@@ -4,84 +4,90 @@
  
 @layer base {
   :root {
-    /* 主色调 - 保持不变，基于#126dff（HSL: 217, 100%, 54%）*/
-    --primary: 217 100% 54%;
-    --primary-light: 217 100% 67%;
-    --primary-dark: 217 100% 42%;
-    --primary-foreground: 210 40% 98%;
+    /* 主色调 - 基于#d97757（HSL: 20, 65%, 60%）*/
+    --primary: 20 65% 60%;
+    --primary-light: 20 65% 72%;
+    --primary-dark: 20 72% 48%;
+    --primary-foreground: 0 0% 100%;
     
-    /* 中性色调 - 更明亮清新的背景 */
-    --background: 210 25% 98%;
-    --foreground: 217 35% 20%;
+    /* 中性色调 - 更新为指定的背景色 */
+    --background: 40 30% 97%;  /* #faf9f5 - 米白色背景 */
+    --foreground: 26 16% 5%;  /* #0f0e0c - 深褐黑色文字 */
     
     /* 卡片和UI容器 - 增加微妙的阴影 */
-    --card: 0 0% 100%;
-    --card-foreground: 217 35% 20%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 217 35% 20%;
+    --card: 44 20% 91%;  /* #edebe3 - 米灰色卡片背景 */
+    --card-foreground: 26 16% 5%;  /* #0f0e0c - 深褐黑色文字 */
+    --popover: 44 20% 91%;  /* #edebe3 - 米灰色弹出框背景 */
+    --popover-foreground: 26 16% 5%;  /* #0f0e0c - 深褐黑色文字 */
     
-    /* 辅助色调 - 更现代的色调 */
-    --secondary: 215 30% 92%;
-    --secondary-foreground: 217 35% 20%;
+    /* 辅助色调 - 温暖米色系 */
+    --secondary: 30 25% 92%;
+    --secondary-foreground: 26 16% 5%;  /* #0f0e0c - 深褐黑色文字 */
     
-    /* 功能色调 - 更鲜艳的色彩 */
-    --muted: 215 15% 95%;
-    --muted-foreground: 217 15% 40%;
-    --accent: 217 80% 95%;
-    --accent-foreground: 217 100% 42%;
-    --success: 142 75% 45%;
+    /* 功能色调 - 温暖风格 */
+    --muted: 60 15% 99%;  /* #fcfcfa - 消息框背景色 */
+    --muted-foreground: 26 10% 30%;
+    --accent: 43 15% 91%;  /* #e8e6dc - 选中框颜色 */
+    --accent-foreground: 26 16% 5%;
+    --user-message: 43 14% 89%;  /* #e9e7de - 用户消息背景色 */
+    --user-message-foreground: 26 16% 5%;  /* #0f0e0c - 深褐黑色文字 */
+    --success: 142 65% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 95% 60%;
-    --warning-foreground: 217 35% 20%;
+    --warning-foreground: 26 16% 5%;
     --destructive: 0 90% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
     
-    /* 边框和表单 - 更细腻的边框 */
-    --border: 215 20% 90%;
-    --input: 215 20% 90%;
-    --ring: 217 100% 54%;
+    /* 边框和表单 - 温暖色系边框 */
+    --border: 43 15% 91%;  /* #e8e6dc - 选中框颜色用于边框 */
+    --input: 43 15% 91%;   /* #e8e6dc - 选中框颜色用于输入框 */
+    --input-background: 0 0% 100%;  /* #ffffff - 输入框背景色 */
+    --ring: 20 65% 60%;
  
-    /* 增加圆角半径 - Canva风格更圆润 */
+    /* 圆角半径 */
     --radius: 1rem;
   }
  
   .dark {
     /* 主色调暗色模式 - 保持基本色相但调整饱和度和亮度 */
-    --primary: 217 80% 60%;
-    --primary-light: 217 70% 70%;
-    --primary-dark: 217 90% 45%;
+    --primary: 20 55% 55%;
+    --primary-light: 20 50% 65%;
+    --primary-dark: 20 65% 40%;
     --primary-foreground: 0 0% 100%;
     
-    /* 中性色调暗色模式 - 更柔和的深色背景 */
-    --background: 217 35% 12%;
-    --foreground: 215 15% 95%;
+    /* 中性色调暗色模式 - 温暖的深褐色背景 */
+    --background: 20 25% 22%;
+    --foreground: 30 10% 95%;
     
     /* 卡片和UI容器暗色模式 */
-    --card: 217 30% 18%;
-    --card-foreground: 215 15% 95%;
-    --popover: 217 30% 18%;
-    --popover-foreground: 215 15% 95%;
+    --card: 44 15% 18%;  /* 暗色模式下的卡片背景 */
+    --card-foreground: 30 10% 95%;
+    --popover: 44 15% 18%;  /* 暗色模式下的弹出框背景 */
+    --popover-foreground: 30 10% 95%;
     
     /* 辅助色调暗色模式 */
-    --secondary: 217 25% 28%;
-    --secondary-foreground: 215 15% 95%;
+    --secondary: 20 20% 28%;
+    --secondary-foreground: 30 10% 95%;
     
     /* 功能色调暗色模式 */
-    --muted: 215 15% 28%;
-    --muted-foreground: 215 15% 70%;
-    --accent: 217 30% 28%;
-    --accent-foreground: 217 70% 85%;
-    --success: 142 65% 45%;
+    --muted: 20 15% 30%;  /* 暗色模式下的消息框背景 */
+    --muted-foreground: 30 15% 70%;
+    --accent: 43 10% 30%;  /* 暗色模式下的选中框颜色 */
+    --accent-foreground: 30 10% 95%;
+    --user-message: 43 15% 35%;  /* 暗色模式下的用户消息背景色 */
+    --user-message-foreground: 30 10% 95%;  /* 暗色模式下的文字颜色 */
+    --success: 142 55% 40%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 85% 55%;
+    --warning: 38 75% 50%;
     --warning-foreground: 0 0% 100%;
-    --destructive: 0 75% 55%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
     
     /* 边框和表单暗色模式 */
-    --border: 217 25% 32%;
-    --input: 217 25% 32%;
-    --ring: 217 80% 60%;
+    --border: 43 10% 30%;  /* 暗色模式下的边框颜色 */
+    --input: 43 10% 30%;   /* 暗色模式下的输入框颜色 */
+    --input-background: 20 15% 25%;  /* 暗色模式下的输入框背景 */
+    --ring: 20 55% 55%;
   }
 }
  
@@ -109,19 +115,11 @@
 /* Canva风格的阴影效果 */
 @layer utilities {
   .shadow-canva-sm {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   }
   
   .shadow-canva {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  .shadow-canva-md {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  }
-  
-  .shadow-canva-lg {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
   
   /* 浮动动效 */
@@ -132,21 +130,5 @@
   .hover-float:hover {
     transform: translateY(-4px);
   }
-  
-  /* 美化区隔线 */
-  .divider-subtle {
-    height: 1px;
-    background: linear-gradient(to right, transparent, hsl(var(--muted) / 0.3), transparent);
-    margin: 0.75rem 0;
-    border-radius: 9999px;
-  }
-  
-  /* 渐变文本 */
-  .text-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    color: transparent;
-  }
+
 }

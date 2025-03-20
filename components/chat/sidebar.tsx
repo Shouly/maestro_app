@@ -119,7 +119,7 @@ export function ChatSidebar() {
 
       {/* 对话列表 */}
       <div className="flex-1 overflow-auto px-4 py-3">
-        <h2 className="mb-3 px-1 text-xs font-semibold text-gradient tracking-wide uppercase">
+        <h2 className="mb-3 px-1 text-xs text-primary font-semibold tracking-wide uppercase">
           对话历史
         </h2>
         <div className="space-y-1.5">
@@ -162,7 +162,7 @@ export function ChatSidebar() {
 
       {/* 底部用户信息区域 */}
       <div className="mt-auto px-4 py-3">
-        <div className="divider-subtle mx-1"></div>
+        <div className="mx-1"></div>
         <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
           <DropdownMenuTrigger asChild>
             <button 

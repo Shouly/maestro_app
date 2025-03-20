@@ -102,7 +102,7 @@ export function ChatInput() {
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="输入消息，Ctrl+Enter 发送"
-            className="h-12 max-h-[200px] min-h-[48px] w-full resize-none rounded-xl border-2 border-input bg-background px-4 py-3 text-sm shadow-sm transition-all duration-200 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-ring hover:border-primary/50"
+            className="h-12 max-h-[200px] min-h-[48px] w-full resize-none rounded-xl border-2 border-input bg-[hsl(var(--input-background))] px-4 py-3 text-sm shadow-sm transition-all duration-200 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-ring hover:border-primary/50"
             disabled={isLoading}
           />
           {message && (
