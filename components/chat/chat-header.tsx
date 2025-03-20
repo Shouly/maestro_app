@@ -2,12 +2,28 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/lib/chat-store';
-import { Edit, Check, X, MessageSquare } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 export function ChatHeader() {
-  const { activeConversationId, getActiveConversation, updateConversationTitle } = useChatStore();
-  const [isEditing, setIsEditing] = useState(false);
+  const { activeConversationId, getActiveConversation, updateConversationTitle, deleteConversation } = useChatStore();
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [title, setTitle] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const activeConversation = getActiveConversation();
@@ -21,9 +37,9 @@ export function ChatHeader() {
     }
   }, [activeConversation]);
 
-  // 开始编辑
-  const startEditing = () => {
-    setIsEditing(true);
+  // 打开重命名对话框
+  const openRenameDialog = () => {
+    setIsRenameDialogOpen(true);
     // 使用setTimeout确保DOM更新后再聚焦
     setTimeout(() => {
       inputRef.current?.focus();
@@ -36,15 +52,15 @@ export function ChatHeader() {
     if (activeConversationId && title.trim()) {
       updateConversationTitle(activeConversationId, title.trim());
     }
-    setIsEditing(false);
+    setIsRenameDialogOpen(false);
   };
 
   // 取消编辑
-  const cancelEditing = () => {
+  const cancelRenaming = () => {
     if (activeConversation) {
       setTitle(activeConversation.title);
     }
-    setIsEditing(false);
+    setIsRenameDialogOpen(false);
   };
 
   // 处理按键事件
@@ -52,63 +68,80 @@ export function ChatHeader() {
     if (e.key === 'Enter') {
       saveTitle();
     } else if (e.key === 'Escape') {
-      cancelEditing();
+      cancelRenaming();
     }
   };
 
+  // 删除当前对话
+  const handleDeleteConversation = () => {
+    if (activeConversationId) {
+      deleteConversation(activeConversationId);
+    }
+  };
+
+  // 如果没有活跃对话，显示空状态
+  if (!activeConversation) {
+    return <span className="text-sm text-muted-foreground">无对话</span>;
+  }
+
   return (
     <div className="flex items-center">
-      {/* 对话标题编辑区域 - Canva风格 */}
-      <div 
-        className={`flex items-center rounded-xl px-3 py-1.5 transition-all duration-200 ${
-          isEditing 
-            ? 'bg-accent/90 shadow-sm' 
-            : 'hover:bg-accent/40 cursor-pointer shadow-canva-sm'
-        }`}
-        onClick={!isEditing ? startEditing : undefined}
-      >
-        {isEditing ? (
-          <div className="flex items-center gap-2">
-            <input
+      <div className="flex items-center gap-1.5">
+        <span className="text-sm font-medium truncate max-w-[200px] md:max-w-[300px]">
+          {activeConversation.title}
+        </span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full focus:ring-0">
+              <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-40">
+            <DropdownMenuItem onClick={openRenameDialog} className="gap-2 cursor-pointer">
+              <Edit size={14} className="text-primary" />
+              <span>重命名</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={handleDeleteConversation} 
+              className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+            >
+              <Trash2 size={14} />
+              <span>删除对话</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* 重命名对话框 */}
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>重命名对话</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
               ref={inputRef}
-              type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="h-7 w-64 bg-transparent border-none px-1 text-sm focus:outline-none"
+              placeholder="请输入对话名称"
+              className="w-full"
               autoFocus
             />
-            <div className="flex items-center">
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                onClick={saveTitle} 
-                title="保存" 
-                className="h-7 w-7 rounded-full text-success hover:text-success hover:bg-success/10"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                onClick={cancelEditing} 
-                title="取消" 
-                className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
-        ) : (
-          <div className="flex items-center gap-2 py-0.5">
-            <MessageSquare className="h-4 w-4 text-primary/70" />
-            <h2 className="text-sm font-medium truncate max-w-[200px] md:max-w-[300px] font-display">
-              {activeConversation?.title || '新对话'}
-            </h2>
-            <Edit className="h-3.5 w-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
-          </div>
-        )}
-      </div>
+          <DialogFooter className="sm:justify-end">
+            <DialogClose asChild>
+              <Button type="button" variant="secondary" onClick={cancelRenaming}>
+                取消
+              </Button>
+            </DialogClose>
+            <Button type="button" onClick={saveTitle}>
+              保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

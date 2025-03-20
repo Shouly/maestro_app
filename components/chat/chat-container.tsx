@@ -13,13 +13,10 @@ export function ChatContainer() {
     <div className="flex h-full flex-col bg-background">
       {/* 单一统一的Header，包含系统名称、对话标题和操作按钮 */}
       <header className="h-14 flex items-center justify-between px-4 shrink-0">
-        {/* 左侧系统名称 */}
-        <div className="flex items-center">
-          <h1 className="text-lg font-medium font-display">{APP_CONFIG.APP_NAME}</h1>
-        </div>
-        
-        {/* 中间对话标题 */}
-        <div className="flex-1 flex justify-center">
+        {/* 左侧：系统名称和对话标题 */}
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-medium font-display shrink-0">{APP_CONFIG.APP_NAME}</h1>
+          <div className="h-5 w-px bg-border/50 mx-1"></div>
           <ChatHeader />
         </div>
         
