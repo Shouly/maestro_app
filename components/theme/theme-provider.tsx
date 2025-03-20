@@ -1,84 +1,40 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import * as React from 'react';
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { type ThemeProviderProps } from 'next-themes/dist/types';
+import { STORAGE_KEYS } from '@/lib/config';
+import { initTheme } from '@/lib/theme-config';
 
-type Theme = 'dark' | 'light' | 'system';
-
-interface ThemeProviderProps {
-  children: React.ReactNode;
-  defaultTheme?: Theme;
-  storageKey?: string;
-}
-
-interface ThemeContextType {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-}
-
-const initialState: ThemeContextType = {
-  theme: 'system',
-  setTheme: () => null,
-};
-
-const ThemeContext = createContext<ThemeContextType>(initialState);
-
-export function ThemeProvider({
-  children,
-  defaultTheme = 'system',
-  storageKey = 'ui-theme',
-  ...props
-}: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem(storageKey) as Theme | null;
-    
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else {
-      setTheme(defaultTheme);
-    }
-  }, [defaultTheme, storageKey]);
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    
-    root.classList.remove('light', 'dark');
-    
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
-        .matches
-        ? 'dark'
-        : 'light';
-      
-      root.classList.add(systemTheme);
-      return;
-    }
-    
-    root.classList.add(theme);
-  }, [theme]);
-
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
-    },
-  };
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+  // 初始化主题
+  React.useEffect(() => {
+    initTheme();
+  }, []);
 
   return (
-    <ThemeContext.Provider {...props} value={value}>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      storageKey={STORAGE_KEYS.THEME}
+      {...props}
+    >
       {children}
-    </ThemeContext.Provider>
+    </NextThemesProvider>
   );
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  
-  return context;
+  const { theme, setTheme } = React.use<{
+    theme: string | undefined;
+    setTheme: (theme: string) => void;
+  }>(require('next-themes'));
+
+  return {
+    theme: theme as 'light' | 'dark' | 'system' | undefined,
+    setTheme,
+    isLightTheme: theme === 'light' || (theme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches),
+    isDarkTheme: theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches),
+  };
 }; 
