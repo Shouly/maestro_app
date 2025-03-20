@@ -1,12 +1,30 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuthStore } from '@/lib/auth';
 import { useChatStore } from '@/lib/chat-store';
-import { Plus, Trash2, LogOut, User, Settings } from 'lucide-react';
+import { 
+  Plus, 
+  Trash2, 
+  LogOut, 
+  User, 
+  Settings, 
+  ChevronUp, 
+  Languages, 
+  LifeBuoy, 
+  Cloud
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { useRouter } from 'next/navigation';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 export function ChatSidebar() {
   const { user, logout } = useAuthStore();
@@ -39,6 +57,11 @@ export function ChatSidebar() {
   const handleDeleteConversation = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     deleteConversation(id);
+  };
+
+  // 打开设置页面
+  const handleSettings = () => {
+    router.push('/settings');
   };
 
   return (
@@ -98,33 +121,51 @@ export function ChatSidebar() {
 
       {/* 底部用户信息区域 */}
       <div className="mt-auto border-t px-3 py-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <User size={16} />
-            </div>
-            <div className="truncate">
-              <p className="text-sm font-medium">{user?.name || '用户'}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {user?.email || '未登录'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-0.5">
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" title="设置">
-              <Settings size={16} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              title="注销"
-              onClick={handleLogout}
-            >
-              <LogOut size={16} />
-            </Button>
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 hover:bg-accent/50 transition-colors">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <User size={16} />
+              </div>
+              <div className="flex-1 truncate text-left">
+                <p className="text-sm font-medium">{user?.name || '用户'}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {user?.email || '未登录'}
+                </p>
+              </div>
+              <ChevronUp size={14} className="text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuLabel>我的账户</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSettings}>
+              <Settings size={16} className="mr-2" />
+              <span>设置</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Languages size={16} className="mr-2" />
+              <span>语言</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <ThemeToggle showLabel={true} className="w-full" />
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Cloud size={16} className="mr-2" />
+              <span>同步设置</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <LifeBuoy size={16} className="mr-2" />
+              <span>帮助与支持</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+              <LogOut size={16} className="mr-2" />
+              <span>注销</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
