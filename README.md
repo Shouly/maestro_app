@@ -72,3 +72,87 @@ bun run tauri build
 ## 贡献
 
 欢迎提交Pull Requests和Issues。
+
+# Maestro 应用
+
+基于 Tauri + Next.js 构建的桌面应用。
+
+## 功能列表
+
+1. **登录系统**
+   - 使用外部浏览器进行登录认证
+   - 自动检查用户登录状态
+   - 详细文档: [登录流程](./docs/login-flow.md)
+
+2. **主题切换**
+   - 支持亮色/暗色主题
+   - 跟随系统设置
+
+## 技术栈
+
+- **前端框架**: Next.js 15.0.0
+- **UI组件**: shadcn/ui + Tailwind CSS
+- **状态管理**: Zustand
+- **桌面应用**: Tauri 2.0
+- **开发工具**: TypeScript, ESLint
+
+## 开发指南
+
+### 安装依赖
+
+```bash
+# 安装前端依赖
+npm install
+
+# 安装Tauri CLI
+cargo install tauri-cli
+```
+
+### 开发模式
+
+```bash
+# 启动前端开发服务器
+npm run dev
+
+# 启动Tauri应用（需要另一个终端）
+cargo tauri dev
+```
+
+### 构建应用
+
+```bash
+npm run build
+cargo tauri build
+```
+
+### 目录结构
+
+```
+maestro/
+├── app/               # Next.js 页面
+├── components/        # React 组件
+├── docs/              # 文档
+├── lib/               # 工具和服务
+├── public/            # 静态资源
+├── src-tauri/         # Tauri 应用源码
+├── types/             # TypeScript 类型定义
+└── README.md          # 项目说明
+```
+
+## 配置说明
+
+### 环境变量
+
+可以通过创建 `.env.local` 文件配置以下环境变量:
+
+- `LOGIN_URL`: 登录页面URL
+- `API_BASE_URL`: API基础URL
+
+## 插件和权限
+
+本应用使用了以下Tauri插件:
+
+- **shell**: 用于打开外部浏览器
+- **opener**: 用于打开外部文件
+
+详细的权限配置见 `src-tauri/capabilities/default.json`。
