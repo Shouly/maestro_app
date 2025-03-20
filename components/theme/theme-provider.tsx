@@ -5,6 +5,7 @@ import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { type ThemeProviderProps } from 'next-themes/dist/types';
 import { STORAGE_KEYS } from '@/lib/config';
 import { initTheme } from '@/lib/theme-config';
+import { useTheme as useNextTheme } from 'next-themes';
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   // 初始化主题
@@ -26,15 +27,31 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 }
 
 export const useTheme = () => {
-  const { theme, setTheme } = React.use<{
-    theme: string | undefined;
-    setTheme: (theme: string) => void;
-  }>(require('next-themes'));
+  const { theme, setTheme } = useNextTheme();
+  
+  const [mounted, setMounted] = React.useState(false);
+  
+  // 只在客户端处理主题检测
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // 计算是否为浅色或深色主题的值
+  const isLightTheme = React.useMemo(() => {
+    if (!mounted) return false;
+    return theme === 'light' || (theme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }, [theme, mounted]);
+  
+  const isDarkTheme = React.useMemo(() => {
+    if (!mounted) return false;
+    return theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }, [theme, mounted]);
 
   return {
     theme: theme as 'light' | 'dark' | 'system' | undefined,
     setTheme,
-    isLightTheme: theme === 'light' || (theme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches),
-    isDarkTheme: theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches),
+    isLightTheme,
+    isDarkTheme,
+    mounted
   };
-}; 
+};
