@@ -19,6 +19,8 @@ export interface Conversation {
   updatedAt: number;
   providerId?: string; // 使用的AI供应商ID
   modelId?: string;    // 使用的模型ID
+  systemPrompt?: string; // 系统提示词
+  maxTurns?: number;   // 保留的对话轮数
 }
 
 // 聊天状态接口
@@ -43,6 +45,16 @@ interface ChatState {
   updateConversationTitle: (conversationId: string, title: string) => void;
   // 更新对话设置
   updateConversation: (conversationId: string, updates: Partial<Conversation>) => void;
+  // 更新对话设置
+  updateConversationSettings: (
+    conversationId: string, 
+    settings: {
+      modelId?: string;
+      providerId?: string;
+      systemPrompt?: string;
+      maxTurns?: number;
+    }
+  ) => void;
 }
 
 // 生成唯一ID
@@ -104,9 +116,16 @@ export const useChatStore = create<ChatState>()(
                   : message.content;
               }
 
+              // 如果设置了maxTurns，则限制消息数量
+              let messages = [...conv.messages, newMessage];
+              if (conv.maxTurns && conv.maxTurns > 0 && messages.length > conv.maxTurns * 2) {
+                // 保留最新的对话轮数（每轮包含用户和助手各一条消息）
+                messages = messages.slice(-conv.maxTurns * 2);
+              }
+
               return {
                 ...conv,
-                messages: [...conv.messages, newMessage],
+                messages,
                 updatedAt: Date.now(),
                 title,
               };
@@ -176,6 +195,21 @@ export const useChatStore = create<ChatState>()(
           conversations: state.conversations.map((conv) =>
             conv.id === conversationId
               ? { ...conv, ...updates, updatedAt: Date.now() }
+              : conv
+          ),
+        }));
+      },
+      
+      // 更新对话设置专用方法
+      updateConversationSettings: (conversationId, settings) => {
+        set((state) => ({
+          conversations: state.conversations.map((conv) =>
+            conv.id === conversationId
+              ? { 
+                  ...conv, 
+                  ...settings,
+                  updatedAt: Date.now() 
+                }
               : conv
           ),
         }));

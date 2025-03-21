@@ -127,7 +127,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="有什么可以帮助您的？（Enter 发送，Shift+Enter 换行）"
-                className="w-full resize-none min-h-[56px] max-h-[220px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-6 pl-7 text-xl font-light text-foreground/90 placeholder:text-foreground/40"
+                className="w-full resize-none min-h-[56px] max-h-[220px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-6 pl-7 text-lg font-light text-foreground/90 placeholder:text-foreground/40"
                 disabled={isLoading}
               />
 

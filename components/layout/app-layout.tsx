@@ -130,7 +130,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
       {/* 左侧触发区域 - 用于鼠标悬停，只在侧边栏关闭时激活 */}
       {!sidebarOpen && (
         <div 
-          className="fixed left-0 top-0 h-full w-8 z-30"
+          className="fixed left-0 top-0 h-full w-8 z-50"
           onMouseEnter={handleMouseEnter}
           aria-hidden="true"
         />
@@ -139,7 +139,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
       {/* 固定的头像按钮 - 当侧边栏关闭时显示 */}
       {!sidebarOpen && (
         <button
-          className="fixed left-4 bottom-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300"
+          className="fixed left-4 bottom-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300"
           onClick={() => toggleSidebar(true)}
           aria-label="打开侧边栏"
         >
@@ -163,7 +163,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
 
             {/* 侧边栏 */}
             <motion.div
-              className="fixed left-0 z-20 w-72 bg-card/90 my-2 rounded-r-lg border-r border-t border-b border-border"
+              className="fixed left-0 z-50 w-72 bg-card/70 my-2 rounded-r-lg border-r border-t border-b border-border"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
@@ -177,7 +177,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
               style={{ 
                 height: 'calc(100% - 1rem)',
                 bottom: '0.25rem',
-                backdropFilter: 'blur(4px)'
+                backdropFilter: 'blur(8px)'
               }}
               onMouseEnter={() => {
                 if (hoverTimerRef.current) {
