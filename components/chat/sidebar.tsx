@@ -118,7 +118,7 @@ export function ChatSidebar() {
       </div>
 
       {/* 对话列表 */}
-      <div className="flex-1 overflow-auto px-4 py-3 mt-3">
+      <div className="flex-1 overflow-auto px-2 py-2 mt-6">
         <h2 className="mb-3 px-1 text-xs text-primary font-semibold tracking-wide uppercase">
           对话历史
         </h2>
@@ -141,7 +141,7 @@ export function ChatSidebar() {
               >
                 <button
                   onClick={() => handleSelectConversation(conversation.id)}
-                  className="truncate px-3 py-2.5 text-left text-sm w-full"
+                  className="truncate px-2 py-2 text-left text-sm w-full"
                 >
                   <span className="truncate block">{conversation.title}</span>
                 </button>
@@ -166,7 +166,7 @@ export function ChatSidebar() {
         <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
           <DropdownMenuTrigger asChild>
             <button 
-              className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 hover:bg-secondary/50 transition-all duration-150 border border-border/50"
+              className="flex items-center gap-3 w-full rounded-xl px-2 py-2 hover:bg-secondary/50 transition-all duration-150 border border-border/50"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <User size={18} />
@@ -187,7 +187,7 @@ export function ChatSidebar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent 
             align="start" 
-            className="w-64 rounded-xl shadow-md p-1"
+            className="w-64 rounded-md shadow-md p-1"
             // 确保下拉菜单显示时不关闭侧边栏
             onCloseAutoFocus={(e) => {
               e.preventDefault();
