@@ -188,7 +188,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
               onMouseLeave={handleMouseLeave}
             >
               {/* 侧边栏标题 - 与header标题保持一致 */}
-              <div className="h-14 flex items-center px-4">
+              <div className="h-14 flex items-center px-4 pb-1">
                 <h1 className="text-xl font-semibold font-display">{APP_CONFIG.APP_NAME}</h1>
               </div>
               

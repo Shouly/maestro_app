@@ -23,7 +23,7 @@ export function ChatContainer() {
       <header className="h-14 flex items-center justify-between px-4 shrink-0">
         {/* 左侧：系统名称和对话标题 */}
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-semibold font-display shrink-0">{APP_CONFIG.APP_NAME}</h1>
+          <h1 className="text-xl font-semibold font-display shrink-0 ">{APP_CONFIG.APP_NAME}</h1>
           {activeConversation && (
             <>
               <div className="h-5 w-px bg-border/50 mx-1"></div>
