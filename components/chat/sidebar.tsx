@@ -12,7 +12,7 @@ import {
   Languages, 
   LifeBuoy, 
   Cloud,
-  Sparkles,
+  MessageCirclePlus,
   MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -112,7 +112,7 @@ export function ChatSidebar() {
           size="sm"
           variant="default"
         >
-          <Sparkles size={14} />
+          <MessageCirclePlus size={14} />
           新对话
         </Button>
       </div>
@@ -187,7 +187,7 @@ export function ChatSidebar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent 
             align="start" 
-            className="w-56 rounded-xl shadow-md p-1"
+            className="w-64 rounded-xl shadow-md p-1"
             // 确保下拉菜单显示时不关闭侧边栏
             onCloseAutoFocus={(e) => {
               e.preventDefault();
