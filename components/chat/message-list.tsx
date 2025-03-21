@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import { useChatStore, Message } from '@/lib/chat-store';
+import { Message, useChatStore } from '@/lib/chat-store';
 import { Bot, Sparkles } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 export function MessageList() {
   const { getActiveConversation } = useChatStore();
@@ -50,11 +50,11 @@ export function MessageList() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 md:px-12 lg:px-24 py-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 md:px-12 lg:px-20 py-6 max-w-4xl mx-auto w-full">
       {conversation.messages.map((message, index) => (
-        <MessageItem 
-          key={message.id} 
-          message={message} 
+        <MessageItem
+          key={message.id}
+          message={message}
           isFirst={index === 0}
           isLast={index === conversation.messages.length - 1}
         />
@@ -70,22 +70,21 @@ interface MessageItemProps {
   isLast?: boolean;
 }
 
-function MessageItem({ message, isFirst, isLast }: MessageItemProps) {
+function MessageItem({ message }: MessageItemProps) {
   const isUser = message.role === 'user';
 
   return (
-    <div className="flex items-start pl-4 pr-4">
+    <div className="flex items-start">
       <div
-        className={`rounded-md px-5 py-3 ${
-          isUser
-            ? 'bg-accent text-accent-foreground border border-accent/50'
-            : 'bg-muted text-foreground border border-border/50'
-        }`}
+        className={`rounded-md px-3 py-2 ${isUser
+          ? 'bg-accent text-accent-foreground border border-accent/50'
+          : 'bg-muted text-foreground border border-border/50'
+          }`}
       >
         <div className="flex items-center">
           {isUser && (
-            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-foreground/40 text-accent-foreground text-xs mr-2">
-              <span className="font-medium">U</span>
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-foreground/70 text-primary-foreground text-xs mr-2">
+              <span className="font-medium">SL</span>
             </div>
           )}
           <p className="whitespace-pre-wrap break-words text-base leading-relaxed font-light text-foreground/80">

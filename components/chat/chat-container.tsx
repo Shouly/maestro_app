@@ -53,7 +53,7 @@ export function ChatContainer() {
           
           {/* 底部输入框 - 与消息区域宽度和边距一致 */}
           <div className="fixed bottom-0 left-0 right-0 w-full">
-            <div className="max-w-4xl mx-auto w-full px-4 md:px-12 lg:px-24">
+            <div className="max-w-4xl mx-auto w-full px-4 md:px-12 lg:px-16">
               <ChatInput />
             </div>
           </div>

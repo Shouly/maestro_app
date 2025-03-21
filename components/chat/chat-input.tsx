@@ -1,19 +1,18 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { useChatStore } from '@/lib/chat-store';
-import { 
-  XCircle, 
-  Loader2, 
-  Sparkles, 
-  PaperclipIcon, 
-  Globe, 
-  Wrench,
-  ArrowUp 
-} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useChatStore } from '@/lib/chat-store';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import {
+  ArrowUp,
+  Globe,
+  Loader2,
+  PaperclipIcon,
+  Sparkles,
+  Wrench,
+  XCircle
+} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 
 // 模拟AI响应
 const simulateResponse = async (userMessage: string): Promise<string> => {
@@ -47,7 +46,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${Math.min(
         textareaRef.current.scrollHeight,
-        200
+        150
       )}px`;
     }
   }, [message]);
@@ -65,14 +64,14 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
 
     // 清空输入框
     setMessage('');
-    
+
     // 显示加载状态
     setIsLoading(true);
 
     try {
       // 获取AI响应
       const response = await simulateResponse(message.trim());
-      
+
       // 添加AI响应
       addMessage({
         role: 'assistant',
@@ -98,7 +97,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
   // 居中版本的输入框样式
   if (isCentered) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full"
@@ -110,7 +109,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="有什么可以帮助您的？（Ctrl+Enter 发送）"
-            className="h-16 max-h-[200px] min-h-[64px] w-full resize-none rounded-xl border-2 border-input bg-[hsl(var(--input-background))] px-5 py-4 text-base shadow-md transition-all duration-200 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-ring hover:border-primary/50"
+            className="h-14 max-h-[150px] min-h-[56px] w-full resize-none rounded-xl border-2 border-input bg-[hsl(var(--input-background))] px-5 py-3 text-base shadow-md transition-all duration-200 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-ring hover:border-primary/50"
             disabled={isLoading}
           />
           {message && (
@@ -124,7 +123,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
               <XCircle className="h-5 w-5" />
             </Button>
           )}
-          
+
           <Button
             variant="default"
             onClick={handleSendMessage}
@@ -149,24 +148,24 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
     <div className={`w-full bg-[hsl(var(--input-background))] border-t border-border border-x rounded-t-xl transition-all duration-200 ${message ? 'shadow-md' : 'hover:shadow-sm'}`}>
       <div className="relative">
         {/* 输入区域 */}
-        <div className="px-0 pt-2 pb-10 relative">
+        <div className="px-0 pt-2 pb-8 relative">
           <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="输入消息..."
-            className="w-full resize-none min-h-[40px] max-h-[180px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-5 pl-5 text-base font-light text-foreground/90 placeholder:text-foreground/40"
+            className="w-full resize-none min-h-[32px] max-h-[150px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-5 pl-5 text-base font-light text-foreground/90 placeholder:text-foreground/40"
             disabled={isLoading}
           />
-          
+
           {/* 发送按钮 */}
-          <div className="absolute bottom-2 right-2">
+          <div className="absolute bottom-1 right-2">
             <Button
               variant={message.trim() ? "default" : "ghost"}
               onClick={handleSendMessage}
               disabled={!message.trim() || isLoading}
-              className={`rounded-sm h-8 w-8 p-0 ${!message.trim() ? 'opacity-60' : ''} bg-primary hover:bg-primary/90`}
+              className={`rounded-sm h-7 w-7 p-0 ${!message.trim() ? 'opacity-60' : ''} bg-primary hover:bg-primary/90`}
               title="发送消息"
             >
               {isLoading ? (
@@ -176,34 +175,34 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
               )}
             </Button>
           </div>
-          
+
           {/* 左下角功能图标 */}
-          <div className="absolute bottom-2 left-2 flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+          <div className="absolute bottom-1 left-2 flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
               title="附件"
             >
-              <PaperclipIcon className="h-[16px] w-[16px]" />
+              <PaperclipIcon className="h-[14px] w-[14px]" />
             </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
               title="联网"
             >
-              <Globe className="h-[16px] w-[16px]" />
+              <Globe className="h-[14px] w-[14px]" />
             </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
               title="工具"
             >
-              <Wrench className="h-[16px] w-[16px]" />
+              <Wrench className="h-[14px] w-[14px]" />
             </Button>
           </div>
         </div>
