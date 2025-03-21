@@ -33,13 +33,11 @@ export function ChatContainer() {
       
       {/* 主内容区与设置面板的容器 */}
       <div className="flex flex-1 relative overflow-hidden">
-        {/* 主内容区域 - 使用flex-grow和width的过渡效果实现收缩 */}
+        {/* 主内容区域 */}
         <div
-          className={`flex flex-col min-w-0 h-full transition-all duration-300 ease-in-out ${
-            isSettingsPanelOpen ? 'pr-[380px] sm:pr-[320px] md:pr-[380px]' : 'w-full'
-          }`}
+          className="flex flex-col min-w-0 h-full w-full transition-all duration-300 ease-in-out"
           style={{ 
-            width: isSettingsPanelOpen ? 'calc(100% - var(--panel-width, 380px))' : '100%'
+            paddingRight: isSettingsPanelOpen ? 'calc(var(--panel-width, 360px) + 1.5rem)' : '0'
           }}
         >
           {/* 根据对话状态显示不同的内容 */}
@@ -47,16 +45,18 @@ export function ChatContainer() {
             <>
               {/* 消息列表 */}
               <div className="flex-1 overflow-y-auto pb-28">
-                <MessageList />
+                <div className="max-w-3xl mx-auto w-full">
+                  <MessageList />
+                </div>
               </div>
 
-              {/* 底部输入框 - 与消息区域宽度和边距一致 */}
+              {/* 底部输入框 */}
               <div className="fixed bottom-0 left-0 w-full transition-all duration-300 ease-in-out"
                 style={{ 
-                  width: isSettingsPanelOpen ? 'calc(100% - var(--panel-width, 380px))' : '100%'
+                  paddingRight: isSettingsPanelOpen ? 'calc(var(--panel-width, 360px) + 1.5rem)' : '0'
                 }}
               >
-                <div className="max-w-4xl mx-auto w-full px-4 md:px-12 lg:px-16">
+                <div className="max-w-3xl mx-auto w-full px-4 md:px-8">
                   <ChatInput />
                 </div>
               </div>
