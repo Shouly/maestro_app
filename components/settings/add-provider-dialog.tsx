@@ -150,11 +150,9 @@ export function AddProviderDialog({ open, onOpenChange, editingProviderId }: Add
             // 添加或更新提供商
             addProvider(providerId, apiKey, baseUrl || undefined);
             
-            // 如果是OpenRouter且没有已经获取模型，尝试获取
-            if (providerId === 'openrouter' && !isFetchingModels) {
-                fetchProviderModels(providerId);
-            }
-
+            // 取消自动获取模型的逻辑，依赖用户手动获取
+            // 只在用户明确请求时获取模型列表
+            
             // 关闭对话框
             onOpenChange(false);
         } catch (error) {

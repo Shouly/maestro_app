@@ -1,254 +1,283 @@
 'use client';
 
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useProviderStore, type ConfiguredProvider } from '@/lib/provider-store';
-import { Plus, Check, Trash2, Edit, ExternalLink, RefreshCw } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { AddProviderDialog } from '@/components/settings/add-provider-dialog';
-import { Switch } from '@/components/ui/switch';
 import { ModelSelector } from '@/components/chat/model-selector';
-import { useChatStore } from '@/lib/chat-store';
+import { AddProviderDialog } from '@/components/settings/add-provider-dialog';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { useProviderStore, type ConfiguredProvider } from '@/lib/provider-store';
 import { ModelServiceFactory } from '@/lib/services/service-factory';
+import { Check, Edit, ExternalLink, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 
 // 获取模型服务工厂实例
 const modelServiceFactory = ModelServiceFactory.getInstance();
 
 export function ProviderSettings() {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingProviderId, setEditingProviderId] = useState<string | undefined>(undefined);
-  const [isLoadingModels, setIsLoadingModels] = useState(false);
-  
-  const {
-    configuredProviders,
-    defaultProviderId,
-    removeProvider,
-    setDefaultProvider,
-    getPredefinedProvider,
-    fetchProviderModels
-  } = useProviderStore();
-  
-  // 当组件加载时，自动刷新支持的供应商模型列表
-  useEffect(() => {
-    const refreshSupportedModels = async () => {
-      // 查找所有已配置的、支持的且激活的供应商
-      const supportedProviders = configuredProviders.filter(
-        provider => provider.isActive && modelServiceFactory.supportsProvider(provider.providerId)
-      );
-      
-      if (supportedProviders.length > 0) {
-        setIsLoadingModels(true);
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [editingProviderId, setEditingProviderId] = useState<string | undefined>(undefined);
+    // 添加组件重新渲染计数器，用来强制组件更新
+    const [refreshCounter, setRefreshCounter] = useState(0);
+    // 添加加载状态
+    const [isInitialized, setIsInitialized] = useState(false);
+
+    const {
+        configuredProviders,
+        defaultProviderId,
+        removeProvider,
+        setDefaultProvider,
+        getPredefinedProvider,
+        fetchProviderModels
+    } = useProviderStore();
+    
+    // 使用useRef跟踪初始化状态，避免重复初始化
+    const initializationRef = useRef(false);
+
+    // 简化为初始化时加载一次模型列表
+    useEffect(() => {
+        // 如果已经初始化过，则不再重复执行
+        if (initializationRef.current) return;
         
-        try {
-          // 为每个供应商获取模型列表
-          for (const provider of supportedProviders) {
-            await fetchProviderModels(provider.providerId);
-          }
-        } catch (error) {
-          console.error('刷新模型列表失败:', error);
-        } finally {
-          setIsLoadingModels(false);
-        }
-      }
-    };
-    
-    refreshSupportedModels();
-  }, [configuredProviders, fetchProviderModels]);
-  
-  // 打开添加对话框
-  const handleAddProvider = () => {
-    setEditingProviderId(undefined);
-    setIsAddDialogOpen(true);
-  };
-  
-  // 打开编辑对话框
-  const handleEditProvider = (providerId: string) => {
-    setEditingProviderId(providerId);
-    setIsAddDialogOpen(true);
-  };
-  
-  // 删除供应商
-  const handleRemoveProvider = (providerId: string) => {
-    if (confirm('确定要删除此供应商吗？')) {
-      removeProvider(providerId);
-    }
-  };
-  
-  // 设置默认供应商
-  const handleSetDefault = (providerId: string) => {
-    setDefaultProvider(providerId);
-  };
-  
-  // 添加刷新模型列表的处理函数
-  const handleRefreshModels = async (providerId: string) => {
-    if (providerId !== 'openrouter') return;
-    
-    setIsLoadingModels(true);
-    try {
-      await fetchProviderModels(providerId);
-    } catch (error) {
-      console.error('刷新模型列表失败:', error);
-    } finally {
-      setIsLoadingModels(false);
-    }
-  };
-  
-  // 获取供应商图标
-  const getProviderLogo = (providerId: string) => {
-    const provider = configuredProviders.find((p: ConfiguredProvider) => p.providerId === providerId);
-    const predefinedProvider = getPredefinedProvider(providerId);
-    
-    if (predefinedProvider?.logoUrl) {
-      return (
-        <div className="w-10 h-10 rounded-md flex items-center justify-center bg-muted">
-          <img src={predefinedProvider.logoUrl} alt={predefinedProvider.name} className="w-6 h-6" />
-        </div>
-      );
-    }
-    
-    // 如果没有找到图标，显示首字母
-    const name = predefinedProvider?.name || 'API';
-    const initial = name.charAt(0).toUpperCase();
-    
-    return (
-      <div className="w-10 h-10 rounded-md flex items-center justify-center bg-primary text-primary-foreground">
-        {initial}
-      </div>
-    );
-  };
-  
-  return (
-    <Card className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">AI 供应商设置</h2>
-        <Button 
-          onClick={handleAddProvider} 
-          className="gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          添加供应商
-        </Button>
-      </div>
-      
-      {configuredProviders.length === 0 ? (
-        <div className="text-center py-12 border border-dashed rounded-md bg-muted/30">
-          <p className="text-muted-foreground mb-4">
-            您还没有配置任何AI供应商
-          </p>
-          <Button 
-            onClick={handleAddProvider} 
-            variant="outline"
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            添加第一个供应商
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {configuredProviders.map((provider: ConfiguredProvider) => {
-            const predefinedProvider = getPredefinedProvider(provider.providerId);
+        let isMounted = true;
+
+        const initializeModelLists = async () => {
+            // 标记为已初始化
+            initializationRef.current = true;
             
-            return (
-              <div 
-                key={provider.providerId} 
-                className="flex items-center justify-between p-4 rounded-md border hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  {getProviderLogo(provider.providerId)}
-                  <div>
-                    <div className="font-medium flex items-center gap-2">
-                      {predefinedProvider?.name || provider.providerId}
-                      {defaultProviderId === provider.providerId && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                          默认
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                      API密钥: 
-                      <span className="font-mono">
-                        {provider.apiKey.substring(0, 4)}••••{provider.apiKey.substring(provider.apiKey.length - 4)}
-                      </span>
-                    </div>
-                    {provider.baseUrl && (
-                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <ExternalLink className="h-3 w-3" /> 
-                        自定义API URL
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    {defaultProviderId !== provider.providerId && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-full"
-                        onClick={() => handleSetDefault(provider.providerId)}
-                        title="设为默认"
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                    )}
-                    
-                    {modelServiceFactory.supportsProvider(provider.providerId) && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-full"
-                        onClick={() => handleRefreshModels(provider.providerId)}
-                        disabled={isLoadingModels}
-                        title="刷新模型列表"
-                      >
-                        <RefreshCw className={`h-4 w-4 ${isLoadingModels ? 'animate-spin' : ''}`} />
-                      </Button>
-                    )}
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 rounded-full"
-                      onClick={() => handleEditProvider(provider.providerId)}
-                      title="编辑"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 rounded-full text-destructive hover:text-destructive/90"
-                      onClick={() => handleRemoveProvider(provider.providerId)}
-                      title="删除"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
+            // 使用闭包捕获当前值，不依赖于外部变量
+            const currentConfiguredProviders = configuredProviders;
+            const currentFetchProviderModels = fetchProviderModels;
+            
+            // 查找所有已配置的、支持的且激活的供应商
+            const supportedProviders = currentConfiguredProviders.filter(
+                provider => provider.isActive && modelServiceFactory.supportsProvider(provider.providerId)
             );
-          })}
-          
-          <div className="mt-6">
-            <h3 className="text-lg font-medium mb-2">默认模型设置</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              设置默认的AI模型，新对话将默认使用此模型。您仍然可以在对话中随时切换模型。
-            </p>
-            <div className="mt-4">
-              <ModelSelector isDefaultSelector={true} />
+
+            if (supportedProviders.length > 0 && isMounted) {
+                try {
+                    // 为每个供应商获取模型列表（只在初始化时执行一次）
+                    for (const provider of supportedProviders) {
+                        if (!isMounted) break;
+                        try {
+                            await currentFetchProviderModels(provider.providerId);
+                        } catch (error) {
+                            console.error(`初始化 ${provider.providerId} 模型列表失败:`, error);
+                        }
+                    }
+                } finally {
+                    if (isMounted) {
+                        setIsInitialized(true);
+                    }
+                }
+            } else {
+                setIsInitialized(true);
+            }
+        };
+
+        // 延迟执行初始化
+        const timeoutId = setTimeout(initializeModelLists, 500);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timeoutId);
+        };
+    }, []);  // 仅在组件挂载时执行一次
+
+    // 监听refreshCounter和configuredProviders的变化，强制重新渲染
+    useEffect(() => {
+        console.log('组件状态更新:', {
+            refreshCounter,
+            providersCount: configuredProviders.length,
+            defaultProviderId
+        });
+    }, [refreshCounter, configuredProviders, defaultProviderId]);
+
+    // 打开添加对话框
+    const handleAddProvider = () => {
+        setEditingProviderId(undefined);
+        setIsAddDialogOpen(true);
+    };
+
+    // 打开编辑对话框
+    const handleEditProvider = (providerId: string) => {
+        setEditingProviderId(providerId);
+        setIsAddDialogOpen(true);
+    };
+
+    // 删除供应商
+    const handleRemoveProvider = (providerId: string) => {
+        console.log(`执行删除供应商 ${providerId}`);
+        // 执行删除操作
+        const success = removeProvider(providerId);
+        console.log(`删除操作返回结果: ${success}`);
+
+        if (success) {
+            console.log(`删除供应商 ${providerId} 成功`);
+            // 强制更新组件状态
+            setRefreshCounter(prev => prev + 1);
+            // 添加强制刷新
+            setTimeout(() => {
+                // 使用timeout确保状态更新后再刷新UI
+                console.log('强制刷新UI');
+                setRefreshCounter(prev => prev + 1);
+            }, 100);
+        } else {
+            console.error(`删除供应商 ${providerId} 失败`);
+            alert('删除供应商失败，请重试');
+        }
+    };
+
+    // 设置默认供应商
+    const handleSetDefault = (providerId: string) => {
+        setDefaultProvider(providerId);
+    };
+
+    // 获取供应商图标
+    const getProviderLogo = (providerId: string) => {
+        const predefinedProvider = getPredefinedProvider(providerId);
+
+        if (predefinedProvider?.logoUrl) {
+            return (
+                <div className="w-10 h-10 rounded-md flex items-center justify-center bg-muted">
+                    <img src={predefinedProvider.logoUrl} alt={predefinedProvider.name} className="w-6 h-6" />
+                </div>
+            );
+        }
+
+        // 如果没有找到图标，显示首字母
+        const name = predefinedProvider?.name || 'API';
+        const initial = name.charAt(0).toUpperCase();
+
+        return (
+            <div className="w-10 h-10 rounded-md flex items-center justify-center bg-primary text-primary-foreground">
+                {initial}
             </div>
-          </div>
-        </div>
-      )}
-      
-      <AddProviderDialog 
-        open={isAddDialogOpen} 
-        onOpenChange={setIsAddDialogOpen}
-        editingProviderId={editingProviderId || undefined}
-      />
-    </Card>
-  );
+        );
+    };
+
+    return (
+        <Card className="p-6">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold">AI 供应商设置</h2>
+                <Button
+                    onClick={handleAddProvider}
+                    className="gap-2"
+                >
+                    <Plus className="h-4 w-4" />
+                    添加供应商
+                </Button>
+            </div>
+
+            {configuredProviders.length === 0 ? (
+                <div className="text-center py-12 border border-dashed rounded-md bg-muted/30">
+                    <p className="text-muted-foreground mb-4">
+                        您还没有配置任何AI供应商
+                    </p>
+                    <Button
+                        onClick={handleAddProvider}
+                        variant="outline"
+                        className="gap-2"
+                    >
+                        <Plus className="h-4 w-4" />
+                        添加第一个供应商
+                    </Button>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {configuredProviders.map((provider: ConfiguredProvider) => {
+                        const predefinedProvider = getPredefinedProvider(provider.providerId);
+
+                        return (
+                            <div
+                                key={provider.providerId}
+                                className="flex items-center justify-between p-4 rounded-md border hover:bg-muted/30 transition-colors"
+                            >
+                                <div className="flex items-center gap-4">
+                                    {getProviderLogo(provider.providerId)}
+                                    <div>
+                                        <div className="font-medium flex items-center gap-2">
+                                            {predefinedProvider?.name || provider.providerId}
+                                            {defaultProviderId === provider.providerId && (
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                                    默认
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                            API密钥:
+                                            <span className="font-mono">
+                                                {provider.apiKey.substring(0, 4)}••••{provider.apiKey.substring(provider.apiKey.length - 4)}
+                                            </span>
+                                        </div>
+                                        {provider.baseUrl && (
+                                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                                <ExternalLink className="h-3 w-3" />
+                                                自定义API URL
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1">
+                                        {defaultProviderId !== provider.providerId && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-full"
+                                                onClick={() => handleSetDefault(provider.providerId)}
+                                                title="设为默认"
+                                            >
+                                                <Check className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-full"
+                                            onClick={() => handleEditProvider(provider.providerId)}
+                                            title="编辑"
+                                        >
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-full text-destructive hover:text-destructive/90"
+                                            onClick={() => {
+                                                console.log('删除按钮被点击:', provider.providerId);
+                                                // 直接删除，不再询问确认
+                                                handleRemoveProvider(provider.providerId);
+                                            }}
+                                            title="删除"
+                                            data-provider-id={provider.providerId}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    <div className="mt-6">
+                        <h3 className="text-lg font-medium mb-2">默认模型设置</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            设置默认的AI模型，新对话将默认使用此模型。您仍然可以在对话中随时切换模型。
+                        </p>
+                        <div className="mt-4">
+                            <ModelSelector isDefaultSelector={true} />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <AddProviderDialog
+                open={isAddDialogOpen}
+                onOpenChange={setIsAddDialogOpen}
+                editingProviderId={editingProviderId || undefined}
+            />
+        </Card>
+    );
 } 
