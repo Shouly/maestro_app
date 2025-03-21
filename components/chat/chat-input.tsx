@@ -4,6 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/lib/chat-store';
 import { XCircle, Loader2, Mic, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 // 模拟AI响应
 const simulateResponse = async (userMessage: string): Promise<string> => {
@@ -21,7 +23,11 @@ const simulateResponse = async (userMessage: string): Promise<string> => {
   });
 };
 
-export function ChatInput() {
+interface ChatInputProps {
+  isCentered?: boolean;
+}
+
+export function ChatInput({ isCentered = false }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { addMessage } = useChatStore();
@@ -81,8 +87,58 @@ export function ChatInput() {
     }
   };
 
+  // 居中版本的输入框样式
+  if (isCentered) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full"
+      >
+        <div className="relative w-full">
+          <textarea
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="有什么可以帮助您的？（Ctrl+Enter 发送）"
+            className="h-16 max-h-[200px] min-h-[64px] w-full resize-none rounded-xl border-2 border-input bg-[hsl(var(--input-background))] px-5 py-4 text-base shadow-md transition-all duration-200 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-ring hover:border-primary/50"
+            disabled={isLoading}
+          />
+          {message && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-16 top-1/2 -translate-y-1/2 rounded-full opacity-70 hover:opacity-100 transition-opacity"
+              onClick={() => setMessage('')}
+              title="清空"
+            >
+              <XCircle className="h-5 w-5" />
+            </Button>
+          )}
+          
+          <Button
+            variant="default"
+            onClick={handleSendMessage}
+            disabled={!message.trim() || isLoading}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full h-10 px-4 transition-all duration-300"
+            title="发送消息"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            ) : (
+              <Sparkles className="h-4 w-4 mr-1" />
+            )}
+            {isLoading ? '思考中...' : '发送'}
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // 默认底部输入框
   return (
-    <div className="bg-background p-5">
+    <div className={cn("bg-background p-5")}>
       <div className="mx-auto flex max-w-3xl items-end gap-3 relative">
         <div className="absolute -top-20 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
         

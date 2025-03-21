@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useChatStore, Message } from '@/lib/chat-store';
-import { Bot, User, Sparkles } from 'lucide-react';
+import { Bot, Sparkles } from 'lucide-react';
 
 export function MessageList() {
   const { getActiveConversation } = useChatStore();
@@ -50,7 +50,7 @@ export function MessageList() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-8 overflow-y-auto p-4 md:p-8">
+    <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 md:px-12 lg:px-24 py-6 max-w-4xl mx-auto w-full">
       {conversation.messages.map((message, index) => (
         <MessageItem 
           key={message.id} 
@@ -74,35 +74,25 @@ function MessageItem({ message, isFirst, isLast }: MessageItemProps) {
   const isUser = message.role === 'user';
 
   return (
-    <div
-      className={`flex items-start gap-4 ${
-        isUser ? 'justify-end' : 'justify-start'
-      }`}
-    >
-      {!isUser && (
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Bot size={20} />
-        </div>
-      )}
+    <div className="flex items-start">
       <div
-        className={`rounded-2xl px-5 py-3.5 max-w-[80%] border ${
+        className={`rounded-md px-5 py-3 max-w-[90%] ${
           isUser
-            ? 'bg-accent text-accent-foreground rounded-tr-sm border-accent'
-            : 'bg-muted backdrop-blur-sm rounded-tl-sm border-border/50'
+            ? 'bg-accent text-accent-foreground border border-accent/50'
+            : 'bg-muted text-foreground border border-border/50'
         }`}
       >
-        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-          {message.content}
-        </p>
-        <div className={`mt-2 text-xs ${isUser ? 'text-accent-foreground/70' : 'text-muted-foreground'}`}>
-          {new Date(message.timestamp).toLocaleTimeString()}
+        <div className="flex items-center">
+          {isUser && (
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-foreground/40 text-accent-foreground text-xs mr-2">
+              <span className="font-medium">U</span>
+            </div>
+          )}
+          <p className="whitespace-pre-wrap break-words text-base leading-relaxed font-light text-foreground/80">
+            {message.content}
+          </p>
         </div>
       </div>
-      {isUser && (
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <User size={20} />
-        </div>
-      )}
     </div>
   );
 } 
