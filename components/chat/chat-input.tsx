@@ -86,6 +86,19 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
 
   // 处理按键事件：Ctrl+Enter或Cmd+Enter发送消息
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // 按Shift+Enter添加换行
+    if (e.key === 'Enter' && e.shiftKey) {
+      return; // 默认行为是添加换行
+    }
+    
+    // 按Enter直接发送消息
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+      return;
+    }
+    
+    // 保留原有的Ctrl+Enter或Cmd+Enter发送逻辑作为备选
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
       handleSendMessage();
@@ -100,8 +113,11 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
         animate={{ opacity: 1, y: 0 }}
         className="w-full"
       >
-        <div className={`w-full bg-[hsl(var(--input-background))] border border-border/80 rounded-lg transition-all duration-300 ${message ? 'shadow-sm border-primary/30' : 'hover:border-border'
-          } focus-within:border-primary/50`}>
+        <div 
+          className={`w-full bg-[hsl(var(--input-background))] border border-border/80 rounded-lg transition-all duration-300 
+          ${message ? 'shadow-sm border-primary/30' : ''} 
+          hover:border-primary/30 hover:shadow-sm focus-within:border-primary/50 focus-within:shadow-md`}
+        >
           <div className="relative">
             {/* 输入区域 */}
             <div className="px-0 pt-4 pb-12 relative">
@@ -110,8 +126,8 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="有什么可以帮助您的？（Ctrl+Enter 发送）"
-                className="w-full resize-none min-h-[56px] max-h-[220px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-6 pl-7 text-lg font-light text-foreground/90 placeholder:text-foreground/40"
+                placeholder="有什么可以帮助您的？（Enter 发送，Shift+Enter 换行）"
+                className="w-full resize-none min-h-[56px] max-h-[220px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-6 pl-7 text-xl font-light text-foreground/90 placeholder:text-foreground/40"
                 disabled={isLoading}
               />
 
@@ -179,7 +195,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="输入消息..."
+            placeholder="输入消息...（Enter 发送，Shift+Enter 换行）"
             className="w-full resize-none min-h-[32px] max-h-[150px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-5 pl-5 text-base font-light text-foreground/90 placeholder:text-foreground/40"
             disabled={isLoading}
           />
