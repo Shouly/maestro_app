@@ -2,7 +2,15 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/lib/chat-store';
-import { XCircle, Loader2, Mic, Plus, Sparkles } from 'lucide-react';
+import { 
+  XCircle, 
+  Loader2, 
+  Sparkles, 
+  PaperclipIcon, 
+  Globe, 
+  Wrench,
+  ArrowUp 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -136,68 +144,69 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
     );
   }
 
-  // 默认底部输入框
+  // 默认底部输入框 - Claude风格
   return (
-    <div className={cn("bg-background p-5")}>
-      <div className="mx-auto flex max-w-3xl items-end gap-3 relative">
-        <div className="absolute -top-20 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
-        
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="rounded-full transition-all duration-200"
-          title="附加文件"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-        
-        <div className="relative flex-1">
+    <div className={`w-full bg-[hsl(var(--input-background))] border-t border-border border-x rounded-t-xl transition-all duration-200 ${message ? 'shadow-md' : 'hover:shadow-sm'}`}>
+      <div className="relative">
+        {/* 输入区域 */}
+        <div className="px-0 pt-2 pb-10 relative">
           <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="输入消息，Ctrl+Enter 发送"
-            className="h-12 max-h-[200px] min-h-[48px] w-full resize-none rounded-xl border-2 border-input bg-[hsl(var(--input-background))] px-4 py-3 text-sm shadow-sm transition-all duration-200 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-ring hover:border-primary/50"
+            placeholder="输入消息..."
+            className="w-full resize-none min-h-[40px] max-h-[180px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-5 pl-5 text-base font-light text-foreground/90 placeholder:text-foreground/40"
             disabled={isLoading}
           />
-          {message && (
+          
+          {/* 发送按钮 */}
+          <div className="absolute bottom-2 right-2">
             <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-12 top-1/2 -translate-y-1/2 rounded-full opacity-70 hover:opacity-100 transition-opacity"
-              onClick={() => setMessage('')}
-              title="清空"
+              variant={message.trim() ? "default" : "ghost"}
+              onClick={handleSendMessage}
+              disabled={!message.trim() || isLoading}
+              className={`rounded-sm h-8 w-8 p-0 ${!message.trim() ? 'opacity-60' : ''} bg-primary hover:bg-primary/90`}
+              title="发送消息"
             >
-              <XCircle className="h-5 w-5" />
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowUp className="h-4 w-4" />
+              )}
             </Button>
-          )}
+          </div>
+          
+          {/* 左下角功能图标 */}
+          <div className="absolute bottom-2 left-2 flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+              title="附件"
+            >
+              <PaperclipIcon className="h-[16px] w-[16px]" />
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+              title="联网"
+            >
+              <Globe className="h-[16px] w-[16px]" />
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+              title="工具"
+            >
+              <Wrench className="h-[16px] w-[16px]" />
+            </Button>
+          </div>
         </div>
-        
-        <Button 
-          variant="outline" 
-          size="icon" 
-          disabled={isLoading}
-          className="rounded-full transition-all duration-200"
-          title="语音输入"
-        >
-          <Mic className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          variant="default"
-          onClick={handleSendMessage}
-          disabled={!message.trim() || isLoading}
-          className="rounded-full px-5 h-12 transition-all duration-300"
-          title="发送消息"
-        >
-          {isLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin mr-2" />
-          ) : (
-            <Sparkles className="h-4 w-4 mr-2" />
-          )}
-          {isLoading ? '思考中...' : '发送'}
-        </Button>
       </div>
     </div>
   );

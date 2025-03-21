@@ -51,12 +51,16 @@ export function ChatContainer() {
       {hasMessages ? (
         <>
           {/* 消息列表 */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto pb-28">
             <MessageList />
           </div>
           
-          {/* 底部输入框 - 移除边界线 */}
-          <ChatInput />
+          {/* 底部输入框 - 与消息区域宽度和边距一致 */}
+          <div className="fixed bottom-0 left-0 right-0 w-full">
+            <div className="max-w-4xl mx-auto w-full px-4 md:px-12 lg:px-24">
+              <ChatInput />
+            </div>
+          </div>
         </>
       ) : (
         /* 欢迎视图，包含居中输入框 */
