@@ -17,6 +17,8 @@ export interface Conversation {
   messages: Message[];
   createdAt: number;
   updatedAt: number;
+  providerId?: string; // 使用的AI供应商ID
+  modelId?: string;    // 使用的模型ID
 }
 
 // 聊天状态接口
@@ -39,6 +41,8 @@ interface ChatState {
   clearAllConversations: () => void;
   // 更新对话标题
   updateConversationTitle: (conversationId: string, title: string) => void;
+  // 更新对话设置
+  updateConversation: (conversationId: string, updates: Partial<Conversation>) => void;
 }
 
 // 生成唯一ID
@@ -161,6 +165,17 @@ export const useChatStore = create<ChatState>()(
           conversations: state.conversations.map((conv) =>
             conv.id === conversationId
               ? { ...conv, title, updatedAt: Date.now() }
+              : conv
+          ),
+        }));
+      },
+
+      // 更新对话设置
+      updateConversation: (conversationId, updates) => {
+        set((state) => ({
+          conversations: state.conversations.map((conv) =>
+            conv.id === conversationId
+              ? { ...conv, ...updates, updatedAt: Date.now() }
               : conv
           ),
         }));
