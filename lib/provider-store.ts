@@ -40,9 +40,6 @@ interface ProviderState {
     // 默认使用的供应商和模型
     defaultProviderId: string | null;
     defaultModelId: string | null;
-    
-    // 可选的刷新时间戳，用于强制更新状态
-    _refreshTimestamp?: number;
 
     // 添加新供应商
     addProvider: (providerId: string, apiKey: string, baseUrl?: string) => void;
@@ -52,9 +49,6 @@ interface ProviderState {
 
     // 切换供应商激活状态
     toggleProvider: (providerId: string, active: boolean) => void;
-
-    // 删除供应商
-    removeProvider: (providerId: string) => boolean;
 
     // 设置默认供应商
     setDefaultProvider: (providerId: string | null) => void;
@@ -77,11 +71,6 @@ interface ProviderState {
     // 测试供应商连接
     testProviderConnection: (providerId: string, apiKey: string, baseUrl?: string) => Promise<boolean>;
 
-    // 打印当前状态（用于调试）
-    debugState: () => void;
-
-    // 强制刷新状态
-    forceRefresh: () => void;
 }
 
 // 获取模型服务工厂实例
@@ -159,78 +148,6 @@ export const useProviderStore = create<ProviderState>()(
                         ? state.configuredProviders.find(p => p.isActive && p.providerId !== providerId)?.providerId || null
                         : state.defaultProviderId
                 }));
-            },
-
-            // 删除供应商
-            removeProvider: (providerId) => {
-                try {
-                    console.log(`开始执行removeProvider: 删除供应商 ${providerId}`);
-                    
-                    // 先检查是否存在该供应商
-                    const providerExists = get().configuredProviders.some(
-                        provider => provider.providerId === providerId
-                    );
-                    
-                    if (!providerExists) {
-                        console.error(`供应商 ${providerId} 不存在，无法删除`);
-                        return false;
-                    }
-                    
-                    // 直接执行状态更新
-                    set(state => {
-                        console.log(`开始更新状态, 当前供应商数:`, state.configuredProviders.length);
-                        
-                        const newConfiguredProviders = state.configuredProviders.filter(
-                            provider => provider.providerId !== providerId
-                        );
-                        
-                        console.log(`过滤后供应商数:`, newConfiguredProviders.length);
-
-                        // 判断是否删除了默认供应商
-                        const isRemovingDefault = state.defaultProviderId === providerId;
-
-                        // 如果删除的是默认供应商，则重新选择新的默认供应商和模型
-                        let newDefaultProviderId = state.defaultProviderId;
-                        let newDefaultModelId = state.defaultModelId;
-
-                        if (isRemovingDefault) {
-                            // 如果还有其他供应商，选择第一个作为默认
-                            if (newConfiguredProviders.length > 0) {
-                                const newDefaultProvider = newConfiguredProviders[0];
-                                newDefaultProviderId = newDefaultProvider.providerId;
-
-                                // 获取该供应商的第一个模型作为默认模型
-                                const predefinedProvider = PROVIDER_PRESETS.find(p => p.id === newDefaultProvider.providerId);
-                                if (predefinedProvider && predefinedProvider.models.length > 0) {
-                                    newDefaultModelId = predefinedProvider.models[0].id;
-                                } else {
-                                    newDefaultModelId = null;
-                                }
-                            } else {
-                                // 如果没有其他供应商，清除默认值
-                                newDefaultProviderId = null;
-                                newDefaultModelId = null;
-                            }
-                        }
-
-                        console.log(`新状态准备完成: 供应商数=${newConfiguredProviders.length}`);
-                        
-                        // 返回新状态
-                        return {
-                            configuredProviders: newConfiguredProviders,
-                            defaultProviderId: newDefaultProviderId,
-                            defaultModelId: newDefaultModelId,
-                            // 添加时间戳确保状态更新
-                            _refreshTimestamp: Date.now()
-                        };
-                    });
-
-                    console.log(`状态更新完成，供应商 ${providerId} 已删除成功`);
-                    return true;
-                } catch (error) {
-                    console.error('删除供应商失败:', error);
-                    return false;
-                }
             },
 
             // 设置默认供应商
@@ -317,25 +234,6 @@ export const useProviderStore = create<ProviderState>()(
 
                 // 使用模型服务测试连接
                 return await modelService.testConnection(apiKey, baseUrl);
-            },
-
-            // 打印当前状态（用于调试）
-            debugState: () => {
-                console.log('当前供应商状态:', get());
-            },
-
-            // 强制刷新状态
-            forceRefresh: () => {
-                const currentState = get();
-                console.log('正在强制刷新状态');
-                // 使用当前状态重新设置，触发状态更新
-                set({
-                    ...currentState,
-                    configuredProviders: [...currentState.configuredProviders],
-                    // 添加一个临时的时间戳字段，强制触发状态更新
-                    _refreshTimestamp: Date.now()
-                });
-                console.log('状态已刷新, 供应商数:', currentState.configuredProviders.length);
             }
         }),
         {
