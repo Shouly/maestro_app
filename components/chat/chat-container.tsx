@@ -1,19 +1,18 @@
 'use client';
 
-import React from 'react';
-import { ChatHeader } from './chat-header';
-import { MessageList } from './message-list';
-import { ChatInput } from './chat-input';
-import { APP_CONFIG } from '@/lib/config';
-import { Share, Star, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useChatStore } from '@/lib/chat-store';
+import { APP_CONFIG } from '@/lib/config';
+import { Settings2, Star } from 'lucide-react';
+import { ChatHeader } from './chat-header';
+import { ChatInput } from './chat-input';
+import { MessageList } from './message-list';
 import { WelcomeView } from './welcome-view';
 
 export function ChatContainer() {
   // 获取当前活动对话
   const activeConversation = useChatStore(state => state.getActiveConversation());
-  
+
   // 检查当前对话是否有消息
   const hasMessages = !!activeConversation?.messages?.length;
 
@@ -31,18 +30,18 @@ export function ChatContainer() {
             </>
           )}
         </div>
-        
+
         {/* 右侧操作按钮 */}
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" title="收藏" className="h-8 w-8 rounded-full">
             <Star className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" title="更多选项" className="h-8 w-8 rounded-full">
-            <MoreHorizontal className="h-4 w-4" />
+          <Button variant="ghost" size="icon" title="设置" className="h-8 w-8 rounded-full">
+            <Settings2 className="h-4 w-4" />
           </Button>
         </div>
       </header>
-      
+
       {/* 根据对话状态显示不同的内容 */}
       {hasMessages ? (
         <>
@@ -50,7 +49,7 @@ export function ChatContainer() {
           <div className="flex-1 overflow-y-auto pb-28">
             <MessageList />
           </div>
-          
+
           {/* 底部输入框 - 与消息区域宽度和边距一致 */}
           <div className="fixed bottom-0 left-0 right-0 w-full">
             <div className="max-w-4xl mx-auto w-full px-4 md:px-12 lg:px-16">
