@@ -103,41 +103,47 @@ export function ChatHeader({
           <>
             <div className="h-5 w-px bg-border/50 mx-1 shrink-0"></div>
             <div className="flex items-center min-w-0">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-base font-light truncate max-w-[200px] md:max-w-[300px]">
-                  {activeConversation.title}
-                </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full focus:ring-0">
-                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-40">
-                    <DropdownMenuItem onClick={openRenameDialog} className="gap-2 cursor-pointer">
-                      <Edit size={14} className="text-primary" />
-                      <span>重命名</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={handleDeleteConversation} 
-                      className="gap-2 cursor-pointer text-destructive focus:text-destructive"
-                    >
-                      <Trash2 size={14} />
-                      <span>删除对话</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button 
+                    className="flex items-center gap-1.5 min-w-0 hover:bg-secondary/50 px-2 py-1 rounded-md transition-colors group"
+                    onClick={openRenameDialog}
+                  >
+                    <span className="text-base font-light truncate max-w-[200px] md:max-w-[300px]">
+                      {activeConversation.title}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground opacity-60 group-hover:opacity-100" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-40">
+                  <DropdownMenuItem onClick={openRenameDialog} className="gap-2 cursor-pointer">
+                    <Edit size={14} className="text-primary" />
+                    <span>重命名</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={handleDeleteConversation} 
+                    className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                  >
+                    <Trash2 size={14} />
+                    <span>删除对话</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </>
         )}
       </div>
 
       {/* 右侧操作按钮 */}
-      <div className="flex items-center gap-2 shrink-0">
-        <Button variant="ghost" size="icon" title="收藏" className="h-8 w-8 rounded-full">
-          <Star className="h-4 w-4" />
+      <div className="flex items-center gap-1 shrink-0">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          title="收藏" 
+          className="h-9 w-9 rounded-full hover:bg-secondary/60"
+        >
+          <Star className="h-[18px] w-[18px]" />
         </Button>
         {isSettingsPanelOpen ? (
           <Button
@@ -145,8 +151,9 @@ export function ChatHeader({
             size="icon"
             onClick={onCloseSettings}
             title="关闭设置"
+            className="h-9 w-9 rounded-full hover:bg-secondary/60"
           >
-            <X className="h-4 w-4" />
+            <X className="h-[18px] w-[18px]" />
           </Button>
         ) : (
           <Button
@@ -154,8 +161,9 @@ export function ChatHeader({
             size="icon"
             onClick={onOpenSettings}
             title="对话设置"
+            className="h-9 w-9 rounded-full hover:bg-secondary/60"
           >
-            <Settings2 className="h-4 w-4" />
+            <Settings2 className="h-[18px] w-[18px]" />
           </Button>
         )}
       </div>
