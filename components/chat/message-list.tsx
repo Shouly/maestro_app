@@ -50,7 +50,7 @@ export function MessageList() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 md:px-12 lg:px-24 py-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 md:px-12 lg:px-24 py-6 max-w-4xl mx-auto w-full">
       {conversation.messages.map((message, index) => (
         <MessageItem 
           key={message.id} 
@@ -74,9 +74,9 @@ function MessageItem({ message, isFirst, isLast }: MessageItemProps) {
   const isUser = message.role === 'user';
 
   return (
-    <div className="flex items-start">
+    <div className="flex items-start pl-4 pr-4">
       <div
-        className={`rounded-md px-5 py-3 max-w-[90%] ${
+        className={`rounded-md px-5 py-3 ${
           isUser
             ? 'bg-accent text-accent-foreground border border-accent/50'
             : 'bg-muted text-foreground border border-border/50'

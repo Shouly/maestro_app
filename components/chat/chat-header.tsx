@@ -87,7 +87,7 @@ export function ChatHeader() {
   return (
     <div className="flex items-center">
       <div className="flex items-center gap-1.5">
-        <span className="text-sm font-medium truncate max-w-[200px] md:max-w-[300px]">
+        <span className="text-base font-light truncate max-w-[200px] md:max-w-[300px]">
           {activeConversation.title}
         </span>
         <DropdownMenu>

@@ -189,7 +189,7 @@ export function AppLayout({ sidebar, children }: AppLayoutProps) {
             >
               {/* 侧边栏标题 - 与header标题保持一致 */}
               <div className="h-14 flex items-center px-4">
-                <h1 className="text-lg font-medium font-display">{APP_CONFIG.APP_NAME}</h1>
+                <h1 className="text-xl font-semibold font-display">{APP_CONFIG.APP_NAME}</h1>
               </div>
               
               {/* 侧边栏内容 */}

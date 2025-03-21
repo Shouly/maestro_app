@@ -23,7 +23,7 @@ export function ChatContainer() {
       <header className="h-14 flex items-center justify-between px-4 shrink-0">
         {/* 左侧：系统名称和对话标题 */}
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-medium font-display shrink-0">{APP_CONFIG.APP_NAME}</h1>
+          <h1 className="text-xl font-semibold font-display shrink-0">{APP_CONFIG.APP_NAME}</h1>
           {activeConversation && (
             <>
               <div className="h-5 w-px bg-border/50 mx-1"></div>
@@ -34,10 +34,6 @@ export function ChatContainer() {
         
         {/* 右侧操作按钮 */}
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="gap-2 text-xs rounded-xl">
-            分享
-            <Share className="h-3.5 w-3.5" />
-          </Button>
           <Button variant="ghost" size="icon" title="收藏" className="h-8 w-8 rounded-full">
             <Star className="h-4 w-4" />
           </Button>
