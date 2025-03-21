@@ -23,7 +23,6 @@ maestro/
 │   ├── chat/                     # 聊天相关组件
 │   │   └── model-selector.tsx    # 模型选择器
 │   └── settings/                 # 设置相关组件
-│       ├── add-provider-dialog.tsx  # 添加供应商对话框
 │       └── provider-settings.tsx    # 供应商设置页面
 ├── lib/
 │   ├── provider-store.ts         # 供应商状态管理
@@ -261,71 +260,199 @@ fetchProviderModels: async (providerId) => {
 
 ### 6.1 供应商设置页面
 
-供应商设置页面展示已配置的供应商列表和默认模型选项：
+`ProviderSettings` 组件是管理AI供应商配置的核心界面，实现了以下主要功能：
 
-- 显示所有配置的供应商
-- 提供添加、编辑、删除供应商的功能
-- 显示默认模型选择器
+1. **供应商选择与展示**
+   - 左侧显示预设供应商列表，包括名称和Logo
+   - 支持供应商配置状态指示（已配置/未配置）
+   - 显示默认供应商标记
 
-自动刷新模型列表逻辑：
+2. **配置管理**
+   - API密钥输入与自动保存
+   - 可选的自定义基础URL配置
+   - 输入验证和错误提示
+   - 供应商特定的帮助信息
+
+3. **自动保存机制**
+   - 当用户修改API密钥或基础URL时自动保存配置
+   - 提供简短的成功/失败反馈并自动清除
+   - 防止无效配置的保存（空API密钥或无效URL）
+
+4. **验证功能**
+   - 通过"测试模型API"按钮验证API配置
+   - 验证过程中显示加载指示器
+   - 显示明确的验证结果反馈
+
+5. **默认供应商设置**
+   - 允许将已配置的供应商设为默认
+   - 防止已设为默认的供应商重复设置
+
+**组件状态管理：**
 
 ```typescript
-useEffect(() => {
-  const refreshSupportedModels = async () => {
-    // 查找所有已配置的、支持的且激活的供应商
-    const supportedProviders = configuredProviders.filter(
-      provider => provider.isActive && modelServiceFactory.supportsProvider(provider.providerId)
-    );
-    
-    if (supportedProviders.length > 0) {
-      setIsLoadingModels(true);
-      
-      try {
-        // 为每个供应商获取模型列表
-        for (const provider of supportedProviders) {
-          await fetchProviderModels(provider.providerId);
-        }
-      } finally {
-        setIsLoadingModels(false);
-      }
+// 核心状态
+const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+const [apiKey, setApiKey] = useState<string>('');
+const [baseUrl, setBaseUrl] = useState<string>('');
+const [isBaseUrlValid, setIsBaseUrlValid] = useState<boolean>(true);
+const [isVerifying, setIsVerifying] = useState<boolean>(false);
+const [errorMessage, setErrorMessage] = useState<string>('');
+const [successMessage, setSuccessMessage] = useState<string>('');
+```
+
+**自动保存实现：**
+
+```typescript
+// 处理API密钥变更
+const handleApiKeyChange = (key: string) => {
+    setApiKey(key);
+
+    // 自动保存配置（如果key不为空且URL有效）
+    if (selectedProviderId && key.trim() && (baseUrl === '' || isBaseUrlValid)) {
+        autoSaveConfig(selectedProviderId, key, baseUrl);
     }
-  };
-  
-  refreshSupportedModels();
-}, [configuredProviders, fetchProviderModels]);
+};
+
+// 自动保存配置
+const autoSaveConfig = (providerId: string, key: string, url: string) => {
+    if (!key.trim()) return;
+    if (url && !isBaseUrlValid) return;
+
+    try {
+        // 检查是否已存在配置
+        const existingConfig = getProviderConfig(providerId);
+
+        if (existingConfig) {
+            // 更新现有配置
+            updateProvider(providerId, key, url || undefined);
+        } else {
+            // 添加新配置
+            addProvider(providerId, key, url || undefined);
+        }
+
+        // 简短的成功提示并自动清除
+        setSuccessMessage('已保存');
+        setTimeout(() => {
+            if (successMessage === '已保存') {
+                setSuccessMessage('');
+            }
+        }, 2000);
+
+        setRefreshCounter(prev => prev + 1);
+    } catch (error) {
+        setErrorMessage('保存失败');
+    }
+};
 ```
 
-### 6.2 添加供应商对话框
-
-允许用户添加新的供应商配置：
-
-- 选择供应商类型
-- 输入API密钥和可选的自定义URL
-- 测试连接功能
-- 动态显示与所选供应商相关的模型获取按钮
-
-动态控制模型刷新按钮：
+**验证实现：**
 
 ```typescript
-{modelServiceFactory.supportsProvider(selectedProviderId) && (
-  <Button
-    variant="outline"
-    disabled={isValidating || isFetchingModels || !apiKey.trim()}
-    onClick={handleFetchModels}
-    className="mr-auto"
-  >
-    {isFetchingModels ? "获取模型中..." : "获取模型列表"}
-  </Button>
-)}
+// 测试连接
+const handleTestConnection = async () => {
+    if (!selectedProviderId) return;
+
+    if (!apiKey.trim()) {
+        setErrorMessage('请输入API密钥');
+        return;
+    }
+
+    if (baseUrl && !isBaseUrlValid) {
+        setErrorMessage('请输入有效的基础URL');
+        return;
+    }
+
+    setIsVerifying(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+        const isSuccess = await testProviderConnection(
+            selectedProviderId,
+            apiKey,
+            baseUrl || undefined
+        );
+
+        if (isSuccess) {
+            setSuccessMessage('验证成功，API密钥有效。');
+        } else {
+            setErrorMessage('API密钥无效，请检查后重试。');
+        }
+    } catch (error) {
+        setErrorMessage('验证失败，请检查API密钥和网络连接。');
+    } finally {
+        setIsVerifying(false);
+    }
+};
 ```
 
-### 6.3 模型选择器
+**用户界面布局：**
+
+组件采用双栏布局：
+- 左侧栏（1/3宽度）：供应商列表，显示图标、名称和状态
+- 右侧栏（2/3宽度）：配置面板，包含API密钥和基础URL输入、验证和状态信息
+- 底部操作区：提供"设为默认"和"测试模型API"按钮
+
+当用户选择一个供应商时，右侧面板显示相应的配置选项，并根据已保存的配置自动填充表单。输入值变更时会自动保存，提供即时反馈。
+
+### 6.2 模型选择器
 
 用于选择默认模型或当前对话的模型：
 
 - 根据已配置的供应商显示可用模型
 - 按供应商分组展示模型
 - 自动处理默认值和变更事件
+
+```typescript
+export function ModelSelector({ 
+  value, 
+  onChange,
+  disabled = false,
+  title = "模型"
+}: {
+  value: string
+  onChange: (value: string) => void
+  disabled?: boolean
+  title?: string
+}) {
+  const { configuredProviders, getAvailableModels } = useProviderStore();
+  const [options, setOptions] = useState<SelectOption[]>([]);
+  
+  // 获取所有可用模型
+  useEffect(() => {
+    const models = getAvailableModels();
+    setOptions(models);
+  }, [configuredProviders, getAvailableModels]);
+
+  return (
+    <div className="flex items-center gap-2">
+      <Label className="text-sm">{title}:</Label>
+      <Select
+        value={value}
+        onValueChange={onChange}
+        disabled={disabled || options.length === 0}
+      >
+        <SelectTrigger className="flex-1 h-8">
+          <SelectValue placeholder="选择模型" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.length === 0 ? (
+            <SelectItem value="none" disabled>
+              无可用模型
+            </SelectItem>
+          ) : (
+            options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label} {option.group && `(${option.group})`}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+```
 
 ## 7. 扩展指南
 
