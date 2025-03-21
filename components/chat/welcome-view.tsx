@@ -8,31 +8,35 @@ import { ChatInput } from './chat-input';
 export function WelcomeView() {
   const user = useAuthStore(state => state.user);
   const userName = user?.name || '您';
+  
+  // 根据当前时间获取问候语
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      return '早上好';
+    } else if (hour >= 12 && hour < 18) {
+      return '下午好';
+    } else {
+      return '晚上好';
+    }
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full pb-16">
+    <div className="flex flex-col items-center h-full pt-[8%]">
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-12 text-center"
+        transition={{ duration: 0.4 }}
+        className="mb-8 text-center"
       >
-        <div className="flex justify-center mb-4">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-primary text-2xl">✨</span>
-          </div>
-        </div>
-        <h1 className="text-4xl font-bold mb-3">您好，{userName}</h1>
-        <p className="text-muted-foreground text-lg max-w-md">
-          欢迎使用Maestro智能助手，有什么可以帮助您的？
-        </p>
+        <h1 className="text-4xl font-light tracking-tight text-foreground/90">{getGreeting()}，{userName}</h1>
       </motion.div>
       
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-        className="w-full max-w-2xl px-4"
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="w-full max-w-[720px] mx-auto px-6 md:px-8"
       >
         <ChatInput isCentered={true} />
       </motion.div>

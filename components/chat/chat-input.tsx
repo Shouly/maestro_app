@@ -8,9 +8,7 @@ import {
   Globe,
   Loader2,
   PaperclipIcon,
-  Sparkles,
-  Wrench,
-  XCircle
+  Hammer,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -102,42 +100,69 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
         animate={{ opacity: 1, y: 0 }}
         className="w-full"
       >
-        <div className="relative w-full">
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="有什么可以帮助您的？（Ctrl+Enter 发送）"
-            className="h-14 max-h-[150px] min-h-[56px] w-full resize-none rounded-xl border-2 border-input bg-[hsl(var(--input-background))] px-5 py-3 text-base shadow-md transition-all duration-200 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-ring hover:border-primary/50"
-            disabled={isLoading}
-          />
-          {message && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-16 top-1/2 -translate-y-1/2 rounded-full opacity-70 hover:opacity-100 transition-opacity"
-              onClick={() => setMessage('')}
-              title="清空"
-            >
-              <XCircle className="h-5 w-5" />
-            </Button>
-          )}
+        <div className={`w-full bg-[hsl(var(--input-background))] border border-border/80 rounded-lg transition-all duration-300 ${message ? 'shadow-sm border-primary/30' : 'hover:border-border'
+          } focus-within:border-primary/50`}>
+          <div className="relative">
+            {/* 输入区域 */}
+            <div className="px-0 pt-4 pb-12 relative">
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="有什么可以帮助您的？（Ctrl+Enter 发送）"
+                className="w-full resize-none min-h-[56px] max-h-[220px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-6 pl-7 text-lg font-light text-foreground/90 placeholder:text-foreground/40"
+                disabled={isLoading}
+              />
 
-          <Button
-            variant="default"
-            onClick={handleSendMessage}
-            disabled={!message.trim() || isLoading}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full h-10 px-4 transition-all duration-300"
-            title="发送消息"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1" />
-            ) : (
-              <Sparkles className="h-4 w-4 mr-1" />
-            )}
-            {isLoading ? '思考中...' : '发送'}
-          </Button>
+              {/* 发送按钮 */}
+              <div className="absolute bottom-3 right-4">
+                <Button
+                  variant={message.trim() ? "default" : "ghost"}
+                  onClick={handleSendMessage}
+                  disabled={!message.trim() || isLoading}
+                  className={`rounded-sm h-9 w-9 p-0 ${!message.trim() ? 'opacity-60' : ''} bg-primary hover:bg-primary/90`}
+                  title="发送消息"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <ArrowUp className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+
+              {/* 左下角功能图标 */}
+              <div className="absolute bottom-3 left-4 flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+                  title="附件"
+                >
+                  <PaperclipIcon className="h-[18px] w-[18px]" />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+                  title="联网"
+                >
+                  <Globe className="h-[18px] w-[18px]" />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+                  title="工具"
+                >
+                  <Hammer className="h-[18px] w-[18px]" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </motion.div>
     );
@@ -202,7 +227,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
               className="h-6 w-6 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
               title="工具"
             >
-              <Wrench className="h-[14px] w-[14px]" />
+              <Hammer className="h-[14px] w-[14px]" />
             </Button>
           </div>
         </div>
