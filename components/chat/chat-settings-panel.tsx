@@ -23,12 +23,12 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
   // 获取当前对话的设置或使用默认值
   const [combinedModelId, setCombinedModelId] = useState<string>('');
   const [systemPrompt, setSystemPrompt] = useState<string>('');
-  const [maxTurns, setMaxTurns] = useState<number>(10);
+  const [maxTurns, setMaxTurns] = useState<number>(5);
   
   // 初始化CSS变量以便在整个应用中使用
   useEffect(() => {
     // 设置面板宽度作为CSS变量
-    document.documentElement.style.setProperty('--panel-width', '380px');
+    document.documentElement.style.setProperty('--panel-width', '400px');
     
     return () => {
       // 清理
@@ -86,20 +86,30 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
   
   return (
     <div
-      className={`absolute top-0 right-0 bottom-0 bg-card border-l shadow-lg z-40 transition-all duration-300 ease-in-out ${
+      className={`absolute top-0 right-0 bottom-0 z-40 transition-all duration-300 ease-in-out ${
         isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       }`}
-      style={{ width: 'var(--panel-width, 380px)' }}
+      style={{ 
+        width: 'var(--panel-width, 400px)',
+        margin: '0.75rem 0.75rem 0.75rem 0',
+        height: 'calc(100% - 1.5rem)'
+      }}
     >
-      <div className="flex flex-col h-full overflow-hidden">
+      <div 
+        className="flex flex-col h-full overflow-hidden rounded-lg border border-border bg-background/70"
+        style={{ 
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+        }}
+      >
         {/* 设置面板标题 */}
-        <div className="p-4 border-b">
+        <div className="px-5 py-4">
           <h3 className="font-medium">对话设置</h3>
         </div>
         
         {/* 可滚动内容区 */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto p-5">
+          <div className="space-y-7">
             {/* 模型选择 */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">模型</Label>
@@ -133,7 +143,7 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
                 <Slider
                   value={[maxTurns]}
                   min={2}
-                  max={50}
+                  max={20}
                   step={1}
                   onValueChange={(value) => setMaxTurns(value[0])}
                   className="flex-1"
@@ -148,7 +158,7 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
         </div>
         
         {/* 底部操作按钮 */}
-        <div className="border-t p-4 flex justify-end gap-2">
+        <div className="px-5 py-4 flex justify-end gap-3">
           <Button variant="outline" onClick={handleReset}>恢复默认</Button>
           <Button onClick={handleSave}>保存</Button>
         </div>
