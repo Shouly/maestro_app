@@ -39,7 +39,7 @@
     --destructive-foreground: 0 0% 100%;
     
     /* 边框和表单 */
-    --border: 43 15% 87%;
+    --border: 40 2% 76%;
     --input: 43 15% 87%;
     --input-background: 0 0% 100%;  /* #ffffff - 消息输入框背景色 */
     --ring: 20 65% 59%;  /* #d97757 */
@@ -124,7 +124,7 @@
 }
 
 .markdown-body pre {
-  @apply mb-4 rounded-md overflow-auto border-0;
+  @apply mb-2 mt-2 rounded-md overflow-auto border-0;
   background-color: var(--code-bg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
