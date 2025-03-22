@@ -38,6 +38,13 @@ export class OpenRouterChatService extends BaseChatService {
       // 将消息转换为OpenRouter格式
       const apiMessages = this.convertMessages(messages, options?.systemPrompt);
 
+      // 限制历史消息数量，使用基类的公共方法
+      if (options?.maxTurns && options.maxTurns > 0) {
+        const limitedMessages = this.applyMaxTurnsLimit(apiMessages, options.maxTurns);
+        apiMessages.length = 0; // 清空原数组
+        apiMessages.push(...limitedMessages);
+      }
+
       // 准备工具定义
       const tools = this.convertTools(options?.tools);
 
@@ -150,6 +157,13 @@ export class OpenRouterChatService extends BaseChatService {
     try {
       // 将消息转换为OpenAI格式
       const apiMessages = this.convertMessages(messages);
+      
+      // 限制历史消息数量，使用基类的公共方法
+      if (options?.maxTurns && options.maxTurns > 0) {
+        const limitedMessages = this.applyMaxTurnsLimit(apiMessages, options.maxTurns);
+        apiMessages.length = 0; // 清空原数组
+        apiMessages.push(...limitedMessages);
+      }
       
       // 准备工具定义
       const tools = this.convertTools(options?.tools);

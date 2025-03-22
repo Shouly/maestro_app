@@ -195,9 +195,9 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
               </p>
             </div>
             
-            {/* 保留对话轮数 */}
+            {/* 上下文轮数 */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">保留对话轮数</Label>
+              <Label className="text-sm font-medium">上下文轮数</Label>
               <div className="flex items-center gap-4">
                 <Slider
                   value={[maxTurns]}
@@ -210,7 +210,7 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
                 <span className="w-12 text-center">{maxTurns}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                设置保留的最近对话轮数，超过此数量的早期对话会被忽略
+                设置发送到模型的最大对话轮数，超过此数量的早期对话在调用AI时会被忽略
               </p>
             </div>
           </div>

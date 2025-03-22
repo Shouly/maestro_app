@@ -15,7 +15,7 @@ export interface ConversationSettings {
   providerId?: string; 
   modelId?: string;
   systemPrompt?: string;
-  maxTurns?: number;
+  maxTurns?: number;  // 发送到模型的最大对话轮数
   temperature?: number;
   maxTokens?: number;
 }
@@ -30,7 +30,7 @@ export interface Conversation {
   providerId?: string; // 使用的AI供应商ID
   modelId?: string;    // 使用的模型ID
   systemPrompt?: string; // 系统提示词
-  maxTurns?: number;   // 保留的对话轮数
+  maxTurns?: number;   // 发送到模型的最大对话轮数
   temperature?: number; // 模型温度，控制创造性
   maxTokens?: number;  // 生成的最大token数
 }
@@ -156,12 +156,8 @@ export const useChatStore = create<ChatState>()(
                   : message.content;
               }
 
-              // 如果设置了maxTurns，则限制消息数量
-              let messages = [...conv.messages, newMessage];
-              if (conv.maxTurns && conv.maxTurns > 0 && messages.length > conv.maxTurns * 2) {
-                // 保留最新的对话轮数（每轮包含用户和助手各一条消息）
-                messages = messages.slice(-conv.maxTurns * 2);
-              }
+              // 添加新消息到消息列表（不在这里处理 maxTurns，由聊天服务处理）
+              const messages = [...conv.messages, newMessage];
 
               return {
                 ...conv,
