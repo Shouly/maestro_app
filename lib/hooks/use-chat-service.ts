@@ -25,23 +25,14 @@ export function useChatService() {
     setChatStatus,
     setStreamingMessageId,
     setLastError,
-    chatStatus,
-    getActiveConversation,
-    createConversation,
-    addMessage,
-    setStatus,
-    abortChat
+    chatStatus
   } = useChatStore();
 
   // 获取当前会话的供应商和模型
-  const activeConversation = getActiveConversation();
-  const {
-    configuredProviders,
-    defaultProviderId,
-    defaultModelId,
-    getProviderConfig,
-    getProviderDefaultModel
-  } = useProviderStore();
+  const activeConversation = useChatStore(state => state.getActiveConversation());
+  const defaultProviderId = useProviderStore(state => state.defaultProviderId);
+  const defaultModelId = useProviderStore(state => state.defaultModelId);
+  const { updateConversation } = useChatStore();
 
   // 获取当前活动会话的所用供应商ID
   const providerId = activeConversation?.providerId || defaultProviderId;
@@ -50,25 +41,22 @@ export function useChatService() {
   useEffect(() => {
     // 如果有活跃对话，且对话没有设置供应商ID，但有默认供应商和模型，则自动更新对话设置
     if (activeConversation && !activeConversation.providerId && defaultProviderId && defaultModelId) {
-      createConversation({
-        title: '新对话',
+      updateConversation(activeConversation.id, {
         providerId: defaultProviderId,
-        modelId: defaultModelId,
-        messages: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        systemPrompt: ''
+        modelId: defaultModelId
       });
       console.log('已自动更新对话供应商设置:', defaultProviderId, defaultModelId);
     }
-  }, [activeConversation, defaultProviderId, defaultModelId, createConversation]);
+  }, [activeConversation, defaultProviderId, defaultModelId, updateConversation]);
 
   // 获取当前供应商配置
-  const providerConfig = getProviderConfig(providerId);
+  const providerConfig = useProviderStore(state =>
+    providerId ? state.getProviderConfig(providerId) : undefined
+  );
 
   // 在函数内部获取最新对话设置，以确保数据始终是最新的
   const getConversationOptions = (): ChatRequestOptions => {
-    const conversation = getActiveConversation();
+    const conversation = useChatStore.getState().getActiveConversation();
     if (!conversation) return {};
 
     return {
@@ -105,7 +93,7 @@ export function useChatService() {
     options?: ChatRequestOptions
   ): Promise<ChatResponse> => {
     // 如果没有提供商ID或其未配置，则抛出错误
-    if (!providerId || !providerConfig || !providerConfig.isActive) {
+    if (!providerId || !providerConfig) {
       const errMsg = '未配置供应商或API密钥';
       updateStatus('error', errMsg);
       throw new Error(errMsg);
@@ -150,7 +138,7 @@ export function useChatService() {
     options?: ChatRequestOptions
   ): Promise<void> => {
     // 如果没有提供商ID或其未配置，则抛出错误
-    if (!providerId || !providerConfig || !providerConfig.isActive) {
+    if (!providerId || !providerConfig) {
       const errMsg = '未配置供应商或API密钥';
       updateStatus('error', errMsg);
       throw new Error(errMsg);
@@ -169,7 +157,7 @@ export function useChatService() {
 
     // 创建AbortController用于中断请求
     const abortController = new AbortController();
-    abortChat(abortController);
+    useChatStore.getState().setAbortController(abortController);
 
     // 保存流式消息内容的变量
     let currentResponse = '';
@@ -193,7 +181,7 @@ export function useChatService() {
         currentResponse += content;
 
         // 获取当前流式消息ID
-        let messageId = getStreamingMessageId();
+        let messageId = useChatStore.getState().streamingMessageId;
 
         // 如果还没有创建消息，现在创建
         if (!messageId && currentResponse.trim() !== '') {
@@ -205,7 +193,7 @@ export function useChatService() {
           };
 
           // 添加消息并获取生成的ID
-          messageId = addMessage(newAssistantMessage);
+          messageId = useChatStore.getState().addMessage(newAssistantMessage);
 
           // 保存流式消息ID
           setStreamingMessageId(messageId);
@@ -219,7 +207,7 @@ export function useChatService() {
         if (!messageId) return;
 
         // 获取最新对话
-        const conversation = getActiveConversation();
+        const conversation = useChatStore.getState().getActiveConversation();
         if (!conversation) return;
 
         // 查找消息索引
@@ -235,7 +223,10 @@ export function useChatService() {
         };
 
         // 更新对话
-        setStatus(conversation.id, { messages: updatedMessages });
+        useChatStore.getState().updateConversation(
+          conversation.id,
+          { messages: updatedMessages }
+        );
 
         // 调用原始回调
         callbacks.onContent?.(content);
@@ -249,7 +240,7 @@ export function useChatService() {
       onFinish: () => {
         updateStatus('success');
         setStreamingMessageId(null);
-        abortChat(null);
+        useChatStore.getState().setAbortController(null);
 
         callbacks.onFinish?.();
       },
@@ -257,9 +248,9 @@ export function useChatService() {
         const errorMessage = err.message || String(err);
 
         // 添加错误信息到当前消息
-        const messageId = getStreamingMessageId();
+        const messageId = useChatStore.getState().streamingMessageId;
         if (messageId) {
-          const conversation = getActiveConversation();
+          const conversation = useChatStore.getState().getActiveConversation();
           if (conversation) {
             const messageIndex = conversation.messages.findIndex(msg => msg.id === messageId);
             if (messageIndex !== -1) {
@@ -270,13 +261,16 @@ export function useChatService() {
                 timestamp: Date.now()
               };
 
-              setStatus(conversation.id, { messages: updatedMessages });
+              useChatStore.getState().updateConversation(
+                conversation.id,
+                { messages: updatedMessages }
+              );
             }
           }
         }
 
         updateStatus('error', errorMessage);
-        abortChat(null);
+        useChatStore.getState().setAbortController(null);
 
         callbacks.onError?.(err);
       }
@@ -306,70 +300,11 @@ export function useChatService() {
     }
   }, [providerId, providerConfig, chatServiceFactory]);
 
-  // 获取聊天服务实例
-  const getChatService = (providerId: string): IChatService | null => {
-    const chatServiceFactory = ChatServiceFactory.getInstance();
-    
-    // 检查供应商是否已激活
-    const providerConfig = getProviderConfig(providerId);
-    if (!providerConfig || !providerConfig.isActive) {
-      return null;
-    }
-    
-    return chatServiceFactory.getChatService(providerId) || null;
-  };
-  
-  // 创建新对话
-  const startNewChat = () => {
-    // 检查是否有默认供应商
-    if (!defaultProviderId) {
-      return {
-        success: false,
-        error: '未设置默认供应商，请在设置中配置'
-      };
-    }
-    
-    // 获取供应商配置
-    const providerConfig = getProviderConfig(defaultProviderId);
-    if (!providerConfig || !providerConfig.isActive) {
-      return {
-        success: false,
-        error: '默认供应商未激活或未配置'
-      };
-    }
-    
-    // 获取当前供应商的默认模型，如果没有设置则使用全局默认模型
-    const providerDefaultModelId = getProviderDefaultModel(defaultProviderId);
-    const modelId = providerDefaultModelId || defaultModelId;
-    
-    if (!modelId) {
-      return {
-        success: false,
-        error: '未设置默认模型，请在设置中配置'
-      };
-    }
-    
-    // 创建新对话
-    const conversationId = createConversation({
-      title: '新对话',
-      providerId: defaultProviderId,
-      modelId: modelId,
-      messages: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      systemPrompt: ''
-    });
-    
-    return { success: true, conversationId };
-  };
-
   return {
     status: chatStatus,
     error,
     sendMessage,
     streamMessage,
     currentProviderId: providerId,
-    getChatService,
-    startNewChat
   };
 } 
