@@ -68,7 +68,10 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
     if (!activeConversation) return;
     
     // 拆分combinedModelId为providerId和modelId
-    const [providerId, modelId] = combinedModelId.split(':');
+    // 修复处理方式，确保支持包含多个冒号的modelId
+    const parts = combinedModelId.split(':');
+    const providerId = parts[0];
+    const modelId = parts.slice(1).join(':');
     
     updateConversationSettings(activeConversation.id, {
       providerId,

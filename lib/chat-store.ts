@@ -83,6 +83,9 @@ interface ChatState {
   setLastError: (error: string | null) => void;
   setAbortController: (controller: AbortController | null) => void;
   abortChat: () => void;
+  
+  // 更新默认设置
+  updateDefaultSettings: (settings: ConversationSettings) => void;
 }
 
 // 生成唯一ID
@@ -105,16 +108,68 @@ export const useChatStore = create<ChatState>()(
       // 创建新对话
       createConversation: (title) => {
         const id = generateId();
-        const defaultSettings = get().defaultSettings;
         
+        // 尝试获取provider-store中的默认值
+        let defaultProviderId = null;
+        let defaultModelId = null;
+        
+        try {
+          const providerStore = require('./provider-store').useProviderStore.getState();
+          if (providerStore) {
+            defaultProviderId = providerStore.defaultProviderId;
+            
+            // 首先检查供应商是否有自己的默认模型
+            if (defaultProviderId) {
+              const providerConfig = providerStore.getProviderConfig(defaultProviderId);
+              if (providerConfig && providerConfig.defaultModelId) {
+                // 优先使用供应商设置的默认模型
+                defaultModelId = providerConfig.defaultModelId;
+                console.log('使用供应商默认模型:', defaultModelId);
+              } else {
+                // 如果供应商没有设置默认模型，再使用全局默认模型
+                defaultModelId = providerStore.defaultModelId;
+                console.log('使用全局默认模型:', defaultModelId);
+              }
+            }
+            
+            console.log('从provider-store获取默认设置:', {
+              defaultProviderId,
+              defaultModelId,
+              source: defaultModelId === providerStore.defaultModelId ? '全局默认' : '供应商默认'
+            });
+          }
+        } catch (error) {
+          console.error('获取provider-store默认设置失败:', error);
+        }
+        
+        // 获取defaultSettings但不包含providerId和modelId
+        const { providerId: _, modelId: __, ...otherDefaultSettings } = get().defaultSettings;
+        
+        // 创建新对话，按优先级应用设置
         const newConversation: Conversation = {
           id,
           title: title || `新对话 ${new Date().toLocaleString()}`,
           messages: [],
           createdAt: Date.now(),
           updatedAt: Date.now(),
-          ...defaultSettings, // 应用默认设置到新对话
+          ...otherDefaultSettings, // 首先应用其他默认设置（除了提供商和模型）
         };
+        
+        // 优先使用provider-store中的设置
+        if (defaultProviderId) {
+          newConversation.providerId = defaultProviderId;
+          
+          // 只有当有默认模型时才设置
+          if (defaultModelId) {
+            newConversation.modelId = defaultModelId;
+          }
+        }
+        
+        console.log('创建新对话最终设置:', {
+          providerId: newConversation.providerId,
+          modelId: newConversation.modelId,
+          otherSettings: otherDefaultSettings
+        });
 
         set((state) => ({
           conversations: [newConversation, ...state.conversations],
@@ -243,11 +298,22 @@ export const useChatStore = create<ChatState>()(
         }));
       },
       
+      // 更新默认设置
+      updateDefaultSettings: (settings) => {
+        set((state) => ({
+          defaultSettings: { 
+            ...state.defaultSettings,
+            ...settings 
+          }
+        }));
+      },
+      
       // 更新对话设置专用方法
       updateConversationSettings: (conversationId, settings) => {
         // 同时更新全局默认设置和当前对话设置
+        get().updateDefaultSettings(settings); // 使用新方法更新默认设置
+        
         set((state) => ({
-          defaultSettings: { ...settings }, // 更新默认设置
           conversations: state.conversations.map((conv) =>
             conv.id === conversationId
               ? { 

@@ -193,3 +193,101 @@ try {
 1. 添加更多供应商支持（如OpenAI、Google、Mistral等）
 2. 增强工具调用能力
 3. 添加高级功能如思维链、多模态支持等 
+
+## 模型选择逻辑
+
+聊天服务集成了完整的模型选择机制，确保系统能在任何情况下选择合适的模型进行对话：
+
+### 多级默认模型设置
+
+系统实现了一个多级默认设置机制，按照以下优先级顺序选择模型：
+
+1. **对话级设置**：每个对话可以有自己特定的模型设置
+2. **用户默认设置**：用户在全局设置中指定的默认模型
+3. **供应商默认模型**：当选定供应商但未指定具体模型时使用
+4. **全局默认模型**：系统兜底设置，当所有其他选项都不可用时使用
+
+### 新建对话流程
+
+当用户创建新对话时，模型选择遵循以下逻辑：
+
+```typescript
+// 伪代码示例
+function selectModelForNewConversation() {
+  // 1. 检查用户默认模型
+  if (defaultModelId && isModelAvailable(defaultModelId)) {
+    return defaultModelId;
+  }
+  
+  // 2. 检查默认供应商的模型
+  if (defaultProviderId && isProviderConfigured(defaultProviderId)) {
+    const provider = getProviderConfig(defaultProviderId);
+    if (provider.isActive) {
+      // 返回供应商的第一个可用模型
+      const firstModel = getFirstModelForProvider(defaultProviderId);
+      if (firstModel) {
+        return firstModel;
+      }
+    }
+  }
+  
+  // 3. 查找第一个已配置的活跃供应商
+  const firstActiveProvider = findFirstActiveProvider();
+  if (firstActiveProvider) {
+    const firstModel = getFirstModelForProvider(firstActiveProvider.providerId);
+    if (firstModel) {
+      return firstModel;
+    }
+  }
+  
+  // 4. 使用全局默认值
+  return "openrouter:auto";
+}
+```
+
+### 模型同步和状态转换
+
+聊天服务还负责确保模型选择状态在不同组件间保持一致：
+
+1. **创建对话时的同步**：
+   - 当创建新对话时，聊天服务从提供商存储中获取当前的默认设置
+   - 将选定的模型ID存储在对话元数据中
+
+2. **切换提供商/模型时的处理**：
+   - 当用户切换默认提供商或模型时，聊天服务会收到通知
+   - 根据需要更新当前对话的模型
+   - 保存更改到持久化存储
+
+3. **处理无效模型情况**：
+   - 如果之前选定的模型变得不可用（如API密钥失效、提供商配置改变）
+   - 自动切换到下一个有效的模型，确保对话可以继续
+
+### 跨组件状态共享
+
+为确保用户界面始终显示正确的模型选择，聊天服务与UI组件通过以下机制协作：
+
+```typescript
+// 在组件中使用模型选择逻辑
+function ModelSelectorComponent() {
+  const { conversations, currentConversationId } = useChatStore();
+  const { getAvailableModels, defaultModelId } = useProviderStore();
+  const { updateConversationModel } = useChatService();
+  
+  // 获取当前对话
+  const currentConversation = conversations.find(c => c.id === currentConversationId);
+  
+  // 获取当前模型ID（优先使用对话特定设置，其次是默认设置）
+  const currentModelId = currentConversation?.modelId || defaultModelId;
+  
+  // 处理模型变更
+  const handleModelChange = (newModelId) => {
+    if (currentConversationId) {
+      updateConversationModel(currentConversationId, newModelId);
+    }
+  };
+  
+  // 渲染组件...
+}
+```
+
+通过这种多级默认设置与状态同步机制，聊天服务确保了在所有情况下都能选择出合适的模型，为用户提供流畅的对话体验。 

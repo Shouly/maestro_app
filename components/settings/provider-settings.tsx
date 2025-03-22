@@ -224,8 +224,8 @@ export function ProviderSettings() {
         }
     };
 
-    // 设置为默认供应商
-    const handleSetDefault = () => {
+    // 设置默认供应商
+    const handleSetDefaultProvider = async () => {
         if (!selectedProviderId) return;
 
         // 检查是否已配置
@@ -235,12 +235,51 @@ export function ProviderSettings() {
             autoSaveConfig(selectedProviderId, apiKey, baseUrl);
         }
 
+        // 获取当前供应商的配置
+        const currentProvider = getProviderConfig(selectedProviderId) || {
+            providerId: selectedProviderId,
+            apiKey: '',
+            isActive: true
+        };
+        
+        // 只设置默认提供商，不自动设置默认模型
         setDefaultProvider(selectedProviderId);
+        console.log('已设置默认供应商:', selectedProviderId);
 
-        // 获取该提供商的第一个模型作为默认模型
-        const provider = getPredefinedProvider(selectedProviderId);
-        if (provider && provider.models.length > 0) {
-            setDefaultModel(provider.models[0].id);
+        // 确定要设置的默认模型
+        let modelToSet = null;
+        
+        // 优先使用供应商的默认模型（如果已设置）
+        if (currentProvider.defaultModelId) {
+            modelToSet = currentProvider.defaultModelId;
+            console.log('使用供应商已设置的默认模型:', modelToSet);
+        } 
+        // 其次检查当前默认模型是否与新供应商兼容
+        else {
+            const currentDefaultModel = useProviderStore.getState().defaultModelId;
+            const provider = getPredefinedProvider(selectedProviderId);
+            
+            if (provider && provider.models.length > 0) {
+                const isModelCompatible = currentDefaultModel && 
+                    provider.models.some(m => m.id === currentDefaultModel);
+                
+                if (isModelCompatible) {
+                    // 如果当前默认模型与新供应商兼容，保留此模型
+                    modelToSet = currentDefaultModel;
+                    console.log('保留现有默认模型（与新供应商兼容）:', modelToSet);
+                } else {
+                    // 获取该供应商第一个不是"auto"的模型（如果有）
+                    const preferredModel = provider.models.find(m => m.id !== 'openrouter:auto') || provider.models[0];
+                    modelToSet = preferredModel.id;
+                    console.log('选择新的默认模型:', modelToSet);
+                }
+            }
+        }
+        
+        // 设置全局默认模型
+        if (modelToSet) {
+            setDefaultModel(modelToSet);
+            console.log('已设置全局默认模型:', modelToSet);
         }
 
         setSuccessMessage('已设置为默认供应商');
@@ -266,17 +305,31 @@ export function ProviderSettings() {
 
         // 从value中获取modelId部分 (修复处理方式，确保支持包含多个冒号的modelId)
         const parts = value.split(':');
-        // 合并除第一个部分外的所有部分作为modelId
+        const providerId = parts[0]; // 这应该与selectedProviderId相同
         const modelId = parts.slice(1).join(':');
+        
+        console.log('设置供应商默认模型:', {
+            providerId: selectedProviderId,
+            valueFromSelect: value,
+            extractedModelId: modelId,
+            fullModelId: providerId + ':' + modelId
+        });
 
         // 设置该供应商的默认模型
         setProviderDefaultModel(selectedProviderId, modelId);
+        
+        // 如果当前选中的供应商也是默认供应商，则同时更新全局默认模型
+        const currentDefaultProviderId = useProviderStore.getState().defaultProviderId;
+        if (currentDefaultProviderId === selectedProviderId) {
+            console.log('当前供应商也是默认供应商，同时更新全局默认模型:', modelId);
+            setDefaultModel(modelId);
+        }
 
         // 触发刷新
         setRefreshCounter(prev => prev + 1);
 
         // 设置成功消息
-        setSuccessMessage(`已设置供应商默认模型`);
+        setSuccessMessage(`已设置供应商默认模型: ${modelId}`);
     };
 
     // 刷新模型列表
@@ -307,7 +360,7 @@ export function ProviderSettings() {
                     {selectedProviderId && isProviderConfigured(selectedProviderId) && defaultProviderId !== selectedProviderId && (
                         <Button
                             variant="outline"
-                            onClick={handleSetDefault}
+                            onClick={handleSetDefaultProvider}
                             className="mr-2"
                             size="sm"
                         >

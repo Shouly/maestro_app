@@ -123,6 +123,7 @@ export function ModelSelector({
     const modelId = parts.slice(1).join(':');
     
     if (isDefaultSelector) {
+      console.log('默认选择器: 设置默认供应商和模型', providerId, modelId);
       // 更新默认模型设置
       setDefaultProvider(providerId);
       setDefaultModel(modelId);

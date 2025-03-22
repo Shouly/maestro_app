@@ -116,11 +116,9 @@ export const useProviderStore = create<ProviderState>()(
 
                 set(state => ({
                     configuredProviders: [...state.configuredProviders, newProvider],
-                    // 如果是第一个添加的供应商，设为默认
-                    defaultProviderId: state.defaultProviderId === null ? providerId : state.defaultProviderId,
-                    defaultModelId: state.defaultModelId === null && provider.models.length > 0
-                        ? provider.models[0].id
-                        : state.defaultModelId
+                    // 只设置默认提供商ID，不设置默认模型ID
+                    defaultProviderId: state.defaultProviderId === null ? providerId : state.defaultProviderId
+                    // 移除自动设置默认模型的逻辑
                 }));
 
                 // 移除自动获取模型列表的代码
@@ -159,11 +157,63 @@ export const useProviderStore = create<ProviderState>()(
             // 设置默认供应商
             setDefaultProvider: (providerId) => {
                 set({ defaultProviderId: providerId });
+
+                // 同步更新chat-store中的默认设置
+                try {
+                    const chatStore = require('./chat-store').useChatStore.getState();
+                    if (chatStore && chatStore.updateDefaultSettings) {
+                        // 先获取当前的默认设置
+                        const currentDefaults = chatStore.getDefaultSettings() || {};
+                        
+                        // 更新供应商ID，保留其他设置
+                        chatStore.updateDefaultSettings({
+                            ...currentDefaults,
+                            providerId
+                        });
+                        
+                        console.log('已同步更新chat-store默认供应商设置:', providerId);
+                    }
+                } catch (error) {
+                    console.error('更新chat-store默认设置失败:', error);
+                }
             },
 
             // 设置默认模型
             setDefaultModel: (modelId) => {
+                // 检查modelId是否包含冒号，如果不包含可能需要添加providerId前缀
+                let fullModelId = modelId;
+                const providerId = get().defaultProviderId;
+                
+                if (providerId && modelId && !modelId.includes(':')) {
+                    // 如果modelId不包含冒号，且有defaultProviderId，则添加providerId前缀
+                    fullModelId = `${providerId}:${modelId}`;
+                    console.log(`ModelId不包含冒号，添加providerId前缀: ${modelId} -> ${fullModelId}`);
+                }
+                
+                // 设置默认模型ID
                 set({ defaultModelId: modelId });
+                console.log('已设置默认模型ID:', modelId);
+
+                // 同步更新chat-store中的默认设置
+                try {
+                    const chatStore = require('./chat-store').useChatStore.getState();
+                    
+                    if (chatStore && chatStore.updateDefaultSettings && providerId) {
+                        // 先获取当前的默认设置
+                        const currentDefaults = chatStore.getDefaultSettings() || {};
+                        
+                        // 更新模型ID，保留其他设置
+                        chatStore.updateDefaultSettings({
+                            ...currentDefaults,
+                            providerId,
+                            modelId
+                        });
+                        
+                        console.log('已同步更新chat-store默认模型设置:', providerId, modelId);
+                    }
+                } catch (error) {
+                    console.error('更新chat-store默认设置失败:', error);
+                }
             },
 
             // 获取所有可用模型
