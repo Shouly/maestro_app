@@ -64,6 +64,7 @@ export interface ChatRequestOptions {
   modelId?: string;
   temperature?: number;
   maxTokens?: number;
+  maxTurns?: number;
   tools?: Tool[];
   toolResults?: ToolCallResult[];
 }

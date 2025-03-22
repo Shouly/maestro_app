@@ -59,6 +59,24 @@ export class OpenRouterChatService extends BaseChatService {
       if (options?.toolResults && options.toolResults.length > 0) {
         this.addToolResultsToMessages(apiMessages, options.toolResults);
       }
+      
+      // 打印当前用户配置信息
+      console.log('=== OpenRouter用户配置信息 ===');
+      console.log('API密钥:', apiKey ? '已配置' : '未配置');
+      console.log('基础URL:', baseUrl);
+      console.log('使用模型:', params.model);
+      console.log('系统提示词:', options?.systemPrompt || '未设置');
+      console.log('最大对话轮数:', options?.maxTurns || '未限制');
+      console.log('温度:', params.temperature);
+      console.log('最大Token数:', params.max_tokens);
+      
+      // 打印完整Prompt
+      console.log('=== 发送到OpenRouter的完整Prompt ===');
+      console.log(JSON.stringify(apiMessages, null, 2));
+      if (tools && tools.length > 0) {
+        console.log('=== 工具定义 ===');
+        console.log(JSON.stringify(tools, null, 2));
+      }
 
       // 设置请求头
       const headers = {
@@ -77,10 +95,26 @@ export class OpenRouterChatService extends BaseChatService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`OpenRouter API错误: ${response.status} - ${errorText}`);
+        let errorDetail = errorText;
+        
+        // 尝试解析错误响应为JSON以获取更多细节
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error && errorJson.error.message) {
+            errorDetail = errorJson.error.message;
+          }
+        } catch (e) {
+          // 如果不是有效的JSON，使用原始错误文本
+        }
+        
+        throw new Error(`OpenRouter API错误: ${response.status} - ${errorDetail}`);
       }
 
       const data = await response.json();
+      
+      // 打印模型响应内容
+      console.log('=== OpenRouter响应内容 ===');
+      console.log(JSON.stringify(data, null, 2));
       
       // 提取响应内容
       return this.extractResponse(data);
@@ -177,12 +211,16 @@ export class OpenRouterChatService extends BaseChatService {
       // 解码器
       const decoder = new TextDecoder();
       let buffer = '';
+      let completeResponse = ''; // 用于记录完整响应内容
 
       // 读取流
       const processStream = async () => {
         const { done, value } = await reader.read();
         
         if (done) {
+          // 打印完整的响应内容
+          console.log('=== OpenRouter完整响应内容 ===');
+          console.log(completeResponse);
           callbacks.onFinish?.();
           return;
         }
@@ -196,6 +234,13 @@ export class OpenRouterChatService extends BaseChatService {
         
         for (const line of lines) {
           if (line.trim() === '') continue;
+          
+          // 处理SSE注释行（OpenRouter偶尔发送防超时注释）
+          if (line.startsWith(':')) {
+            console.log('收到SSE注释:', line);
+            continue;
+          }
+          
           if (!line.startsWith('data: ')) continue;
           
           const data = line.substring(6);
@@ -203,10 +248,24 @@ export class OpenRouterChatService extends BaseChatService {
           
           try {
             const json = JSON.parse(data);
+            
+            // 检查json对象是否有效且包含choices数组
+            if (!json || !json.choices || !Array.isArray(json.choices) || json.choices.length === 0) {
+              // 这可能是API的注释或进度更新，跳过处理
+              console.log('收到无效的流式响应格式:', data);
+              continue;
+            }
+            
             const delta = json.choices[0]?.delta;
+            
+            // 如果delta不存在，可能是其他格式的消息，跳过处理
+            if (!delta) {
+              continue;
+            }
             
             if (delta?.content) {
               callbacks.onContent?.(delta.content);
+              completeResponse += delta.content; // 累积完整响应
             }
             
             // 处理工具调用
@@ -246,7 +305,9 @@ export class OpenRouterChatService extends BaseChatService {
               }
             }
           } catch (err) {
-            console.error('解析流式响应出错:', err);
+            console.error('解析流式响应出错:', err, '原始数据:', data);
+            // 继续处理下一行，不中断整个流程
+            continue;
           }
         }
         
@@ -364,11 +425,16 @@ export class OpenRouterChatService extends BaseChatService {
    * 从OpenRouter响应中提取内容
    */
   private extractResponse(response: any): ChatResponse {
+    // 检查响应格式是否有效
+    if (!response || !response.choices || !Array.isArray(response.choices) || response.choices.length === 0) {
+      throw new Error('无效的OpenRouter响应格式：缺少choices数组或为空');
+    }
+    
     const choice = response.choices[0];
     const message = choice?.message;
     
     if (!message) {
-      throw new Error('无效的OpenRouter响应格式');
+      throw new Error('无效的OpenRouter响应格式：缺少message字段');
     }
     
     // 提取工具调用

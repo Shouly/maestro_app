@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useChatService } from '@/lib/hooks/use-chat-service';
+import { useProviderStore } from '@/lib/provider-store';
 
 // 模拟AI响应
 const simulateResponse = async (userMessage: string): Promise<string> => {
@@ -36,9 +37,11 @@ interface ChatInputProps {
 export function ChatInput({ isCentered = false }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { addMessage } = useChatStore();
+  const { addMessage, updateConversation } = useChatStore();
   const { streamMessage, status } = useChatService();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // 获取已配置的提供商列表
+  const { configuredProviders, setDefaultProvider, setDefaultModel } = useProviderStore();
 
   // 自动调整输入框高度
   useEffect(() => {
@@ -75,6 +78,44 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
     setMessage('');
     
     try {
+      // 检查是否在欢迎页面且当前没有设置默认提供商
+      const defaultProviderId = useProviderStore.getState().defaultProviderId;
+      const isFirstMessage = activeConversation.messages.length <= 1; // 只有当前这条用户消息
+      const isWelcomePage = isCentered; // 使用isCentered参数判断是否是欢迎页面
+      
+      // 如果是欢迎页面的第一条消息，且没有默认提供商，则自动选择一个已配置的活跃提供商
+      if (isWelcomePage && isFirstMessage && !defaultProviderId) {
+        // 查找第一个已配置且活跃的提供商
+        const firstActiveProvider = configuredProviders.find(provider => provider.isActive);
+        
+        if (firstActiveProvider) {
+          // 设置默认提供商
+          setDefaultProvider(firstActiveProvider.providerId);
+          
+          // 获取该提供商的第一个模型作为默认模型
+          const provider = useProviderStore.getState().getPredefinedProvider(firstActiveProvider.providerId);
+          if (provider && provider.models.length > 0) {
+            setDefaultModel(provider.models[0].id);
+          }
+          
+          // 更新当前会话使用这个提供商
+          updateConversation(activeConversation.id, {
+            providerId: firstActiveProvider.providerId,
+            modelId: provider?.models[0]?.id // 使用该提供商的第一个模型
+          });
+          
+          console.log('已自动选择提供商:', firstActiveProvider.providerId);
+        } else {
+          // 没有找到已配置的活跃提供商，添加友好的错误提示
+          addMessage({
+            role: 'assistant',
+            content: '系统提示：您需要先配置并启用至少一个AI服务提供商才能使用对话功能。请点击左侧边栏底部的设置图标，然后在"服务提供商"选项卡中添加您的API密钥。',
+            timestamp: Date.now(),
+          });
+          return; // 直接返回，不继续执行后续的AI响应请求
+        }
+      }
+
       // 流式生成响应
       let currentResponse = '';
       
@@ -144,6 +185,35 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
       );
     } catch (error) {
       console.error('发送消息失败:', error);
+      
+      // 添加友好的错误提示消息
+      const activeConversation = useChatStore.getState().getActiveConversation();
+      if (activeConversation) {
+        // 检查是否已经有助手消息
+        const hasAssistantMessage = activeConversation.messages.some(
+          msg => msg.role === 'assistant' && msg.content.includes('系统提示')
+        );
+        
+        // 如果没有显示过错误提示，则添加
+        if (!hasAssistantMessage) {
+          let errorMessage = '系统提示：发送消息时出错。';
+          
+          // 根据错误类型提供具体建议
+          if (error instanceof Error) {
+            if (error.message.includes('未配置供应商') || error.message.includes('不支持的供应商')) {
+              errorMessage = '系统提示：您需要先配置并启用一个AI服务提供商才能使用对话功能。请点击左侧边栏底部的设置图标，然后在"服务提供商"选项卡中添加您的API密钥。';
+            } else {
+              errorMessage = `系统提示：发送消息时出错。${error.message}`;
+            }
+          }
+          
+          addMessage({
+            role: 'assistant',
+            content: errorMessage,
+            timestamp: Date.now(),
+          });
+        }
+      }
     }
   };
 

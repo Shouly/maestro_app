@@ -62,6 +62,23 @@ export class AnthropicChatService extends BaseChatService {
       if (tools && tools.length > 0) {
         params.tools = tools;
       }
+      
+      // 打印当前用户配置信息
+      console.log('=== Anthropic用户配置信息 ===');
+      console.log('API密钥:', apiKey ? '已配置' : '未配置');
+      console.log('使用模型:', params.model);
+      console.log('系统提示词:', params.system || '未设置');
+      console.log('温度:', params.temperature);
+      console.log('最大Token数:', params.max_tokens);
+      
+      // 打印完整Prompt
+      console.log('=== 发送到Anthropic的完整Prompt ===');
+      console.log('系统提示词:', params.system || '未设置');
+      console.log('消息:', JSON.stringify(apiMessages, null, 2));
+      if (tools && tools.length > 0) {
+        console.log('=== 工具定义 ===');
+        console.log(JSON.stringify(tools, null, 2));
+      }
 
       // 如果有工具结果，则添加到最后一条消息中
       if (options?.toolResults && options.toolResults.length > 0) {
@@ -92,6 +109,10 @@ export class AnthropicChatService extends BaseChatService {
 
       // 发送请求
       const response = await anthropic.messages.create(params);
+
+      // 打印模型响应内容
+      console.log('=== Anthropic响应内容 ===');
+      console.log(JSON.stringify(response, null, 2));
 
       // 提取响应内容
       return this.extractResponse(response);
@@ -183,8 +204,11 @@ export class AnthropicChatService extends BaseChatService {
       const stream = await anthropic.messages.stream(params);
 
       // 使用正确的事件处理API
+      let completeResponse = ''; // 用于记录完整响应内容
+      
       stream.on('text', (text) => {
         callbacks.onContent?.(text);
+        completeResponse += text; // 累积完整响应
       });
 
       stream.on('contentBlock', (contentBlock: any) => {
@@ -206,6 +230,10 @@ export class AnthropicChatService extends BaseChatService {
 
       // 等待流完成
       await stream.done();
+      
+      // 打印完整的响应内容
+      console.log('=== Anthropic完整响应内容 ===');
+      console.log(completeResponse);
       
       // 通知完成
       callbacks.onFinish?.();
@@ -247,7 +275,7 @@ export class AnthropicChatService extends BaseChatService {
   private convertMessages(messages: Message[]): any[] {
     return messages.map(msg => ({
       role: msg.role,
-      content: msg.content,
+      content: msg.content
     }));
   }
 
