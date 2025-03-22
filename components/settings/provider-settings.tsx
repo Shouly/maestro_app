@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
 import { Separator } from '@/components/ui/separator';
+import { ProviderIcon } from '../ui/provider-icon';
 
 export function ProviderSettings() {
     // 状态管理
@@ -250,25 +251,7 @@ export function ProviderSettings() {
 
     // 获取供应商图标
     const getProviderLogo = (providerId: string) => {
-        const predefinedProvider = getPredefinedProvider(providerId);
-
-        if (predefinedProvider?.logoUrl) {
-            return (
-                <div className="w-10 h-10 rounded-md flex items-center justify-center bg-background border">
-                    <img src={predefinedProvider.logoUrl} alt={predefinedProvider.name} className="w-6 h-6" />
-                </div>
-            );
-        }
-
-        // 如果没有找到图标，显示首字母
-        const name = predefinedProvider?.name || 'API';
-        const initial = name.charAt(0).toUpperCase();
-
-        return (
-            <div className="w-10 h-10 rounded-md flex items-center justify-center bg-primary/10 text-primary border border-primary/20">
-                {initial}
-            </div>
-        );
+        return <ProviderIcon providerId={providerId} size={40} />;
     };
 
     // 处理默认模型变更

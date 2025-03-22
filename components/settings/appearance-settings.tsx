@@ -13,8 +13,30 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { motion } from 'framer-motion';
-import { Layout, Monitor, Moon, Paintbrush, Sun } from 'lucide-react';
-import { useState } from 'react';
+import { Layout, Monitor, Moon, Paintbrush, Sun, SquareCode } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
+// 使用localStorage保存图标设置
+const useIconSettings = () => {
+    // 默认启用
+    const [useLobeIcons, setUseLobeIcons] = useState(true);
+    
+    useEffect(() => {
+        // 从localStorage读取设置
+        const savedSetting = localStorage.getItem('useLobeIcons');
+        if (savedSetting !== null) {
+            setUseLobeIcons(savedSetting === 'true');
+        }
+    }, []);
+    
+    const updateUseLobeIcons = (value: boolean) => {
+        setUseLobeIcons(value);
+        localStorage.setItem('useLobeIcons', value.toString());
+        // 可以添加重新加载页面的逻辑，以应用新设置
+    };
+    
+    return { useLobeIcons, updateUseLobeIcons };
+};
 
 export function AppearanceSettings() {
     const { theme, setTheme } = useTheme();
@@ -22,6 +44,7 @@ export function AppearanceSettings() {
     const [accentColor, setAccentColor] = useState('默认');
     const [borderRadius, setBorderRadius] = useState('标准');
     const [enableAnimation, setEnableAnimation] = useState(true);
+    const { useLobeIcons, updateUseLobeIcons } = useIconSettings();
 
     return (
         <div className="space-y-4">
@@ -150,6 +173,22 @@ export function AppearanceSettings() {
                                 <Switch
                                     checked={enableAnimation}
                                     onCheckedChange={setEnableAnimation}
+                                />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base flex items-center">
+                                        <SquareCode className="h-4 w-4 mr-2" />
+                                        使用Lobe图标
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        为AI供应商使用Lobe高质量图标
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={useLobeIcons}
+                                    onCheckedChange={updateUseLobeIcons}
                                 />
                             </div>
                         </div>

@@ -12,7 +12,6 @@ export interface ModelPreset {
 export interface ProviderPreset {
   id: string;           // 唯一标识符
   name: string;         // 显示名称
-  logoUrl?: string;     // 供应商Logo
   baseUrl: string;      // 默认API基础URL
   apiKeyRequired: boolean; // 是否需要API密钥
   models: ModelPreset[]; // 供应商支持的模型列表
@@ -23,7 +22,6 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     id: "anthropic",
     name: "Anthropic",
     baseUrl: "https://api.anthropic.com/v1",
-    logoUrl: "/logos/anthropic.svg",
     apiKeyRequired: true,
     models: [
       {
@@ -52,7 +50,6 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     id: "openrouter",
     name: "OpenRouter",
     baseUrl: "https://openrouter.ai/api/v1",
-    logoUrl: "/logos/openrouter.svg",
     apiKeyRequired: true,
     models: [
       {
