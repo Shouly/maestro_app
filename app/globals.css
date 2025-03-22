@@ -25,7 +25,7 @@
     --secondary-foreground: 26 16% 5%;
     
     /* 消息相关色调 */
-    --muted: 60 25% 98%;  /* #fcfcfa - AI回复消息背景色 */
+    --muted: 0 0% 100%;  /* #fdfdfd - AI回复消息背景色 */
     --muted-foreground: 26 10% 30%;
     --accent: 43 22% 89%;  /* #eae8e0 - 我的消息背景色 */
     --accent-foreground: 26 16% 5%;
@@ -46,6 +46,11 @@
  
     /* 圆角半径 */
     --radius: 1rem;
+
+    --code-bg: hsl(220, 13%, 18%); /* #282c34 */
+    --code-text: hsl(220, 14%, 96%);
+    --code-font-size: 0.875rem;
+    --code-line-height: 1.0;
   }
  
   .dark {
@@ -86,6 +91,9 @@
     --input: 43 10% 30%;
     --input-background: 20 15% 25%;
     --ring: 20 55% 55%;
+
+    /* 代码块颜色 */
+    --code-bg: #282c34;
   }
 }
  
@@ -116,7 +124,9 @@
 }
 
 .markdown-body pre {
-  @apply mb-4 rounded-md bg-muted/80 border border-border/30 overflow-auto;
+  @apply mb-4 rounded-md overflow-auto border-0;
+  background-color: var(--code-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .markdown-body pre > div {
@@ -124,7 +134,8 @@
 }
 
 .markdown-body code:not(pre code) {
-  @apply bg-muted/60 px-1.5 py-0.5 rounded-md text-sm font-mono;
+  @apply bg-muted/60 px-1.5 py-0.5 rounded-md font-mono;
+  font-size: var(--code-font-size);
 }
 
 .markdown-body img {
@@ -138,4 +149,7 @@
 /* 确保代码块不会溢出 */
 .markdown-body pre code {
   @apply !break-words whitespace-pre-wrap;
+  font-size: var(--code-font-size) !important;
+  line-height: var(--code-line-height) !important;
+  color: var(--code-text) !important;
 }

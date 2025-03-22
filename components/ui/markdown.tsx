@@ -3,7 +3,7 @@
 import React, { FC, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneLight } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { Copy, Check } from 'lucide-react';
 
 // 添加类型声明
@@ -21,19 +21,20 @@ interface MarkdownProps {
 
 // 定制的代码高亮样式
 const customCodeStyle = {
-  ...oneLight,
+  ...vscDarkPlus,
   'pre[class*="language-"]': {
-    ...oneLight['pre[class*="language-"]'],
+    ...vscDarkPlus['pre[class*="language-"]'],
     backgroundColor: 'var(--code-bg)',
-    borderRadius: '0.5rem',
     padding: '1rem',
-    margin: '1rem 0',
+    margin: '0',
     overflow: 'auto',
-    border: '1px solid var(--border)',
+    borderRadius: '0.375rem',
   },
   'code[class*="language-"]': {
-    ...oneLight['code[class*="language-"]'],
+    ...vscDarkPlus['code[class*="language-"]'],
     backgroundColor: 'transparent',
+    fontSize: 'var(--code-font-size)',
+    lineHeight: 'var(--code-line-height)',
     padding: 0,
     borderRadius: 0,
     border: 'none',
@@ -62,11 +63,11 @@ export const Markdown: FC<MarkdownProps> = ({ content, className = '' }) => {
             <div className="relative group">
               <button
                 onClick={() => handleCopyCode(code)}
-                className="absolute right-2 top-2 p-1.5 rounded-md bg-background/80 hover:bg-background border border-border/50 text-foreground/50 hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="absolute right-2 top-2 p-1.5 rounded-md bg-background/10 hover:bg-background/20 text-white/70 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/30"
                 aria-label="复制代码"
                 title="复制代码"
               >
-                {copiedCode === code ? <Check size={16} /> : <Copy size={16} />}
+                {copiedCode === code ? <Check size={14} /> : <Copy size={14} />}
               </button>
               <SyntaxHighlighter
                 style={customCodeStyle}
@@ -75,7 +76,7 @@ export const Markdown: FC<MarkdownProps> = ({ content, className = '' }) => {
                 {...rest}
                 wrapLongLines={true}
                 customStyle={{
-                  backgroundColor: 'var(--code-bg, hsl(220, 13%, 95%))',
+                  backgroundColor: 'var(--code-bg)',
                   margin: 0,
                 }}
               >
@@ -83,13 +84,13 @@ export const Markdown: FC<MarkdownProps> = ({ content, className = '' }) => {
               </SyntaxHighlighter>
             </div>
           ) : (
-            <code className="bg-muted/60 px-1.5 py-0.5 rounded-md text-sm font-mono" {...rest}>
+            <code className="bg-muted/60 px-1.5 py-0.5 rounded-md font-mono" style={{ fontSize: 'var(--code-font-size)' }} {...rest}>
               {children}
             </code>
           );
         },
         // 添加其他自定义Markdown组件样式
-        p: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
+        p: ({ children }) => <p className="leading-relaxed">{children}</p>,
         h1: ({ children }) => <h1 className="text-2xl font-bold my-4">{children}</h1>,
         h2: ({ children }) => <h2 className="text-xl font-bold my-3">{children}</h2>,
         h3: ({ children }) => <h3 className="text-lg font-bold my-2">{children}</h3>,
