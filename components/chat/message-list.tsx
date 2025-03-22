@@ -4,6 +4,7 @@ import { Message, useChatStore } from '@/lib/chat-store';
 import { Bot, Sparkles } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { AnimatedDots } from '@/components/ui/animated-dots';
+import { Markdown } from '@/components/ui/markdown';
 
 export function MessageList() {
   const { 
@@ -114,9 +115,15 @@ function MessageItem({ message, isStreaming = false }: MessageItemProps) {
               <span className="font-medium">SL</span>
             </div>
           )}
-          <p className="whitespace-pre-wrap break-words text-base leading-relaxed font-light text-foreground/80">
-            {message.content}
-          </p>
+          {isUser ? (
+            <p className="whitespace-pre-wrap break-words text-base leading-relaxed font-light text-foreground/80">
+              {message.content}
+            </p>
+          ) : (
+            <div className="w-full text-base leading-relaxed font-light text-foreground/80">
+              <Markdown content={message.content} />
+            </div>
+          )}
         </div>
       </div>
     </div>

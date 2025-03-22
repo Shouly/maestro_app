@@ -109,3 +109,33 @@
     -ms-overflow-style: none;
   }
 }
+
+/* Markdown 样式 */
+.markdown-body {
+  @apply text-base font-light;
+}
+
+.markdown-body pre {
+  @apply mb-4 rounded-md bg-muted/80 border border-border/30 overflow-auto;
+}
+
+.markdown-body pre > div {
+  @apply rounded-md !bg-transparent;
+}
+
+.markdown-body code:not(pre code) {
+  @apply bg-muted/60 px-1.5 py-0.5 rounded-md text-sm font-mono;
+}
+
+.markdown-body img {
+  @apply max-w-full rounded-md my-4;
+}
+
+.markdown-body hr {
+  @apply my-6 border-border;
+}
+
+/* 确保代码块不会溢出 */
+.markdown-body pre code {
+  @apply !break-words whitespace-pre-wrap;
+}
