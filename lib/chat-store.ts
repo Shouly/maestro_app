@@ -310,9 +310,7 @@ export const useChatStore = create<ChatState>()(
       
       // 更新对话设置专用方法
       updateConversationSettings: (conversationId, settings) => {
-        // 同时更新全局默认设置和当前对话设置
-        get().updateDefaultSettings(settings); // 使用新方法更新默认设置
-        
+        // 只更新当前对话设置，不更新全局默认设置
         set((state) => ({
           conversations: state.conversations.map((conv) =>
             conv.id === conversationId
