@@ -3,7 +3,7 @@
  * 用于获取并使用合适的聊天服务
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useChatStore, Message } from '@/lib/chat-store';
 import { useProviderStore } from '@/lib/provider-store';
 import { ChatServiceFactory } from '@/lib/services/chat/chat-service-factory';
@@ -27,14 +27,42 @@ export function useChatService() {
   // 获取当前会话的供应商和模型
   const activeConversation = useChatStore(state => state.getActiveConversation());
   const defaultProviderId = useProviderStore(state => state.defaultProviderId);
+  const defaultModelId = useProviderStore(state => state.defaultModelId);
+  const { updateConversation } = useChatStore();
   
   // 获取当前活动会话的所用供应商ID
   const providerId = activeConversation?.providerId || defaultProviderId;
+  
+  // 自动更新对话的供应商和模型设置
+  useEffect(() => {
+    // 如果有活跃对话，且对话没有设置供应商ID，但有默认供应商和模型，则自动更新对话设置
+    if (activeConversation && !activeConversation.providerId && defaultProviderId && defaultModelId) {
+      updateConversation(activeConversation.id, {
+        providerId: defaultProviderId,
+        modelId: defaultModelId
+      });
+      console.log('已自动更新对话供应商设置:', defaultProviderId, defaultModelId);
+    }
+  }, [activeConversation, defaultProviderId, defaultModelId, updateConversation]);
   
   // 获取当前供应商配置
   const providerConfig = useProviderStore(state => 
     providerId ? state.getProviderConfig(providerId) : undefined
   );
+  
+  // 在函数内部获取最新对话设置，以确保数据始终是最新的
+  const getConversationOptions = (): ChatRequestOptions => {
+    const conversation = useChatStore.getState().getActiveConversation();
+    if (!conversation) return {};
+    
+    return {
+      modelId: conversation.modelId,
+      systemPrompt: conversation.systemPrompt,
+      temperature: conversation.temperature,
+      maxTokens: conversation.maxTokens,
+      maxTurns: conversation.maxTurns
+    };
+  };
   
   /**
    * 发送消息
@@ -61,8 +89,12 @@ export function useChatService() {
     setError(null);
     
     try {
+      // 合并对话设置和传入的选项
+      const conversationOptions = getConversationOptions();
+      const mergedOptions = { ...conversationOptions, ...options };
+      
       // 调用服务发送消息
-      const response = await chatService.sendMessage(messages, options);
+      const response = await chatService.sendMessage(messages, mergedOptions);
       setStatus('success');
       return response;
     } catch (err) {
@@ -123,8 +155,12 @@ export function useChatService() {
     };
     
     try {
+      // 合并对话设置和传入的选项
+      const conversationOptions = getConversationOptions();
+      const mergedOptions = { ...conversationOptions, ...options };
+      
       // 调用服务流式发送消息
-      await chatService.streamMessage(messages, wrappedCallbacks, options);
+      await chatService.streamMessage(messages, wrappedCallbacks, mergedOptions);
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);

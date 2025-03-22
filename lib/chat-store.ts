@@ -21,6 +21,8 @@ export interface Conversation {
   modelId?: string;    // 使用的模型ID
   systemPrompt?: string; // 系统提示词
   maxTurns?: number;   // 保留的对话轮数
+  temperature?: number; // 模型温度，控制创造性
+  maxTokens?: number;  // 生成的最大token数
 }
 
 // 聊天状态接口
@@ -53,6 +55,8 @@ interface ChatState {
       providerId?: string;
       systemPrompt?: string;
       maxTurns?: number;
+      temperature?: number;
+      maxTokens?: number;
     }
   ) => void;
 }

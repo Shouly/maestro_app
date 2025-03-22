@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import { useChatStore } from '@/lib/chat-store';
 import { useProviderStore } from '@/lib/provider-store';
 import { ModelSelector } from './model-selector';
@@ -24,6 +25,8 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
   const [combinedModelId, setCombinedModelId] = useState<string>('');
   const [systemPrompt, setSystemPrompt] = useState<string>('');
   const [maxTurns, setMaxTurns] = useState<number>(5);
+  const [temperature, setTemperature] = useState<number>(0.7); // 默认温度0.7
+  const [maxTokens, setMaxTokens] = useState<number>(4000); // 默认最大tokens 4000
   
   // 初始化CSS变量以便在整个应用中使用
   useEffect(() => {
@@ -51,6 +54,12 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
       
       // 设置最大对话轮数
       setMaxTurns(activeConversation.maxTurns || 10);
+      
+      // 设置温度
+      setTemperature(activeConversation.temperature !== undefined ? activeConversation.temperature : 0.7);
+      
+      // 设置最大token数
+      setMaxTokens(activeConversation.maxTokens || 4000);
     }
   }, [activeConversation, defaultProviderId, defaultModelId]);
   
@@ -65,7 +74,9 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
       providerId,
       modelId,
       systemPrompt,
-      maxTurns
+      maxTurns,
+      temperature,
+      maxTokens
     });
     
     onClose();
@@ -79,6 +90,8 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
     
     setSystemPrompt('');
     setMaxTurns(10);
+    setTemperature(0.7);
+    setMaxTokens(4000);
   };
   
   // 如果没有活动对话，不显示设置面板
@@ -133,6 +146,52 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
               />
               <p className="text-xs text-muted-foreground text-right">
                 {systemPrompt.length}/4000
+              </p>
+            </div>
+            
+            {/* 温度设置 */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">温度（Temperature）</Label>
+              <div className="flex items-center gap-4">
+                <Slider
+                  value={[temperature]}
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  onValueChange={(value) => setTemperature(value[0])}
+                  className="flex-1"
+                />
+                <span className="w-12 text-center">{temperature.toFixed(1)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                较低的值使回答更加确定和一致，较高的值使回答更加多样化和创造性
+              </p>
+            </div>
+            
+            {/* 最大Token数 */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">最大输出Token数</Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  value={maxTokens}
+                  onChange={(e) => setMaxTokens(Number(e.target.value))}
+                  min={100}
+                  max={32000}
+                  step={100}
+                  className="w-24"
+                />
+                <Slider
+                  value={[maxTokens]}
+                  min={100}
+                  max={8000}
+                  step={100}
+                  onValueChange={(value) => setMaxTokens(value[0])}
+                  className="flex-1"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                限制模型单次回复生成的最大Token数，较大的值允许更长的回复
               </p>
             </div>
             

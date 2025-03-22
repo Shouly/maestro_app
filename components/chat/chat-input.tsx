@@ -179,8 +179,11 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
           },
         },
         {
-          systemPrompt: activeConversation.systemPrompt,
           modelId: activeConversation.modelId,
+          systemPrompt: activeConversation.systemPrompt,
+          temperature: activeConversation.temperature,
+          maxTokens: activeConversation.maxTokens,
+          maxTurns: activeConversation.maxTurns
         }
       );
     } catch (error) {
