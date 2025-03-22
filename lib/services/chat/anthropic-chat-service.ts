@@ -84,7 +84,6 @@ export class AnthropicChatService extends BaseChatService {
       const headers = {
         "anthropic-beta": "prompt-caching-2024-07-31"
       };
-      params.extra_headers = headers;
 
       // 打印当前用户配置信息
       console.log('=== Anthropic用户配置信息 ===');
@@ -131,8 +130,8 @@ export class AnthropicChatService extends BaseChatService {
         }
       }
 
-      // 发送请求
-      const response = await anthropic.messages.create(params);
+      // 发送请求，正确传递headers参数
+      const response = await anthropic.messages.create(params, { headers });
 
       // 打印模型响应内容和缓存信息
       console.log('=== Anthropic响应内容 ===');
@@ -226,11 +225,17 @@ export class AnthropicChatService extends BaseChatService {
         params.tools = tools;
       }
 
-      // 添加prompt缓存header
-      const headers = {
-        "anthropic-beta": "prompt-caching-2024-07-31"
+      // 准备请求配置，包含headers和信号
+      const requestOptions: any = {
+        headers: {
+          "anthropic-beta": "prompt-caching-2024-07-31"
+        }
       };
-      params.extra_headers = headers;
+      
+      // 如果有中止信号，添加到请求选项中
+      if (options?.signal) {
+        requestOptions.signal = options.signal;
+      }
 
       // 打印当前用户配置信息
       console.log('=== Anthropic流式请求配置信息 ===');
@@ -250,17 +255,11 @@ export class AnthropicChatService extends BaseChatService {
         console.log(JSON.stringify(tools, null, 2));
       }
 
-      // 创建请求配置，包含中止信号
-      const requestOptions: any = {};
-      if (options?.signal) {
-        requestOptions.signal = options.signal;
-      }
-
       // 调用Anthropic API，使用stream方法
       const stream = await anthropic.messages.stream(params, requestOptions);
 
       // 使用正确的事件处理API
-      stream.on('text', (text) => {
+      stream.on('text', (text: string) => {
         // 如果已经中止，则不处理新内容
         if (options?.signal?.aborted) return;
 
@@ -285,7 +284,7 @@ export class AnthropicChatService extends BaseChatService {
       // 注册工具调用监听器
       (stream as any).on('tool_use', handleToolUse);
 
-      stream.on('error', (error) => {
+      stream.on('error', (error: Error) => {
         // 如果是中止错误，不报告错误
         if (
           options?.signal?.aborted || 
