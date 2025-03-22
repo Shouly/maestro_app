@@ -172,6 +172,23 @@ export class AnthropicChatService extends BaseChatService {
       if (tools && tools.length > 0) {
         params.tools = tools;
       }
+      
+      // 打印当前用户配置信息
+      console.log('=== Anthropic流式请求配置信息 ===');
+      console.log('API密钥:', apiKey ? '已配置' : '未配置');
+      console.log('使用模型:', params.model);
+      console.log('系统提示词:', params.system || '未设置');
+      console.log('温度:', params.temperature);
+      console.log('最大Token数:', params.max_tokens);
+      
+      // 打印完整Prompt
+      console.log('=== 发送到Anthropic的完整Prompt(流式) ===');
+      console.log('系统提示词:', params.system || '未设置');
+      console.log('消息:', JSON.stringify(apiMessages, null, 2));
+      if (tools && tools.length > 0) {
+        console.log('=== 工具定义 ===');
+        console.log(JSON.stringify(tools, null, 2));
+      }
 
       // 创建请求配置，包含中止信号
       const requestOptions: any = {};
@@ -190,7 +207,8 @@ export class AnthropicChatService extends BaseChatService {
         callbacks.onContent?.(text);
       });
       
-      stream.on('tool_use', (toolUse) => {
+      // 处理工具调用（适配 Anthropic SDK 的事件类型）
+      const handleToolUse = (toolUse: any) => {
         // 如果已经中止，则不处理工具调用
         if (options?.signal?.aborted) return;
         
@@ -202,7 +220,10 @@ export class AnthropicChatService extends BaseChatService {
             arguments: JSON.stringify(toolUse.input)
           }
         });
-      });
+      };
+      
+      // 注册工具调用监听器
+      (stream as any).on('tool_use', handleToolUse);
       
       stream.on('error', (error) => {
         // 如果是中止错误，不报告错误

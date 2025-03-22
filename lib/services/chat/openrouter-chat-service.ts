@@ -176,6 +176,24 @@ export class OpenRouterChatService extends BaseChatService {
         params.tools = tools;
       }
       
+      // 打印当前用户配置信息
+      console.log('=== OpenRouter流式请求配置信息 ===');
+      console.log('API密钥:', apiKey ? '已配置' : '未配置');
+      console.log('基础URL:', baseUrl);
+      console.log('使用模型:', params.model);
+      console.log('系统提示词:', options?.systemPrompt || '未设置');
+      console.log('最大对话轮数:', options?.maxTurns || '未限制');
+      console.log('温度:', params.temperature);
+      console.log('最大Token数:', params.max_tokens);
+
+      // 打印完整Prompt
+      console.log('=== 发送到OpenRouter的完整Prompt(流式) ===');
+      console.log(JSON.stringify(params.messages, null, 2));
+      if (tools && tools.length > 0) {
+        console.log('=== 工具定义 ===');
+        console.log(JSON.stringify(tools, null, 2));
+      }
+      
       // 设置请求头
       const headers = {
         'Content-Type': 'application/json',

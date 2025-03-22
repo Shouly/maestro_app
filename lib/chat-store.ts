@@ -265,11 +265,18 @@ export const useChatStore = create<ChatState>()(
       },
       
       // 状态管理方法
-      setChatStatus: (status) => set({ chatStatus: status }),
-      setStreamingMessageId: (messageId) => set({ streamingMessageId: messageId }),
+      setChatStatus: (status) => {
+        console.log(`聊天状态变更: ${get().chatStatus} -> ${status}`);
+        set({ chatStatus: status });
+      },
+      setStreamingMessageId: (messageId) => {
+        console.log(`流式消息ID变更: ${get().streamingMessageId} -> ${messageId}`);
+        set({ streamingMessageId: messageId });
+      },
       setLastError: (error) => set({ lastError: error }),
       setAbortController: (controller) => set({ abortController: controller }),
       abortChat: () => {
+        console.log('中断聊天请求');
         const controller = get().abortController;
         if (controller) {
           controller.abort();
