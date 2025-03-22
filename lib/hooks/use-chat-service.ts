@@ -245,6 +245,23 @@ export function useChatService() {
         callbacks.onFinish?.();
       },
       onError: (err) => {
+        // 检查是否是中止错误 - 增强检测逻辑
+        if (
+          abortController.signal.aborted || // 如果已经中止
+          (err instanceof Error && (
+            err.name === 'AbortError' || 
+            err.message.includes('aborted') || 
+            err.message.includes('cancelled') ||
+            err.message.includes('canceled')
+          ))
+        ) {
+          // 对于中止错误，不显示错误消息，恢复idle状态即可
+          updateStatus('idle');
+          useChatStore.getState().setAbortController(null);
+          setStreamingMessageId(null);
+          return;
+        }
+
         const errorMessage = err.message || String(err);
 
         // 添加错误信息到当前消息
@@ -272,6 +289,7 @@ export function useChatService() {
         updateStatus('error', errorMessage);
         useChatStore.getState().setAbortController(null);
 
+        // 只有非中止错误才调用原始回调
         callbacks.onError?.(err);
       }
     };

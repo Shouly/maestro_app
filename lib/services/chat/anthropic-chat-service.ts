@@ -37,6 +37,7 @@ export class AnthropicChatService extends BaseChatService {
       // 创建Anthropic客户端
       const anthropic = new Anthropic({
         apiKey,
+        dangerouslyAllowBrowser: true,
       });
 
       // 将消息转换为Anthropic格式
@@ -64,9 +65,14 @@ export class AnthropicChatService extends BaseChatService {
         messages: apiMessages,
       };
 
-      // 添加系统消息
+      // 添加系统消息（使用结构化格式支持缓存）
       if (options?.systemPrompt) {
-        params.system = options.systemPrompt;
+        // 使用结构化的system格式，添加cache_control
+        params.system = [{
+          type: "text",
+          text: options.systemPrompt,
+          cache_control: { type: "ephemeral" }
+        }];
       }
 
       // 添加工具
@@ -74,17 +80,24 @@ export class AnthropicChatService extends BaseChatService {
         params.tools = tools;
       }
 
+      // 添加prompt缓存header
+      const headers = {
+        "anthropic-beta": "prompt-caching-2024-07-31"
+      };
+      params.extra_headers = headers;
+
       // 打印当前用户配置信息
       console.log('=== Anthropic用户配置信息 ===');
       console.log('API密钥:', apiKey ? '已配置' : '未配置');
       console.log('使用模型:', params.model);
-      console.log('系统提示词:', params.system || '未设置');
+      console.log('系统提示词:', typeof params.system === 'string' ? params.system : (params.system?.[0]?.text || '未设置'));
       console.log('温度:', params.temperature);
       console.log('最大Token数:', params.max_tokens);
+      console.log('启用prompt缓存:', true);
 
       // 打印完整Prompt
       console.log('=== 发送到Anthropic的完整Prompt ===');
-      console.log('系统提示词:', params.system || '未设置');
+      console.log('系统提示词:', typeof params.system === 'string' ? params.system : (params.system?.[0]?.text || '未设置'));
       console.log('消息:', JSON.stringify(apiMessages, null, 2));
       if (tools && tools.length > 0) {
         console.log('=== 工具定义 ===');
@@ -121,9 +134,21 @@ export class AnthropicChatService extends BaseChatService {
       // 发送请求
       const response = await anthropic.messages.create(params);
 
-      // 打印模型响应内容
+      // 打印模型响应内容和缓存信息
       console.log('=== Anthropic响应内容 ===');
       console.log(JSON.stringify(response, null, 2));
+      
+      // 打印缓存统计信息（如果有）
+      if (response.usage) {
+        console.log('=== 缓存统计信息 ===');
+        console.log('缓存创建Token:', response.usage.input_tokens);
+        if ('cache_creation_input_tokens' in response.usage) {
+          console.log('缓存创建Token:', response.usage.cache_creation_input_tokens);
+        }
+        if ('cache_read_input_tokens' in response.usage) {
+          console.log('缓存读取Token:', response.usage.cache_read_input_tokens);
+        }
+      }
 
       // 提取响应内容
       return this.extractResponse(response);
@@ -153,6 +178,7 @@ export class AnthropicChatService extends BaseChatService {
     // 创建Anthropic客户端
     const anthropic = new Anthropic({
       apiKey,
+      dangerouslyAllowBrowser: true,
     });
 
     try {
@@ -185,9 +211,14 @@ export class AnthropicChatService extends BaseChatService {
         stream: true,
       };
 
-      // 添加系统消息
+      // 添加系统消息（使用结构化格式支持缓存）
       if (options?.systemPrompt) {
-        params.system = options.systemPrompt;
+        // 使用结构化的system格式，添加cache_control
+        params.system = [{
+          type: "text",
+          text: options.systemPrompt,
+          cache_control: { type: "ephemeral" }
+        }];
       }
 
       // 添加工具
@@ -195,17 +226,24 @@ export class AnthropicChatService extends BaseChatService {
         params.tools = tools;
       }
 
+      // 添加prompt缓存header
+      const headers = {
+        "anthropic-beta": "prompt-caching-2024-07-31"
+      };
+      params.extra_headers = headers;
+
       // 打印当前用户配置信息
       console.log('=== Anthropic流式请求配置信息 ===');
       console.log('API密钥:', apiKey ? '已配置' : '未配置');
       console.log('使用模型:', params.model);
-      console.log('系统提示词:', params.system || '未设置');
+      console.log('系统提示词:', typeof params.system === 'string' ? params.system : (params.system?.[0]?.text || '未设置'));
       console.log('温度:', params.temperature);
       console.log('最大Token数:', params.max_tokens);
+      console.log('启用prompt缓存:', true);
 
       // 打印完整Prompt
       console.log('=== 发送到Anthropic的完整Prompt(流式) ===');
-      console.log('系统提示词:', params.system || '未设置');
+      console.log('系统提示词:', typeof params.system === 'string' ? params.system : (params.system?.[0]?.text || '未设置'));
       console.log('消息:', JSON.stringify(apiMessages, null, 2));
       if (tools && tools.length > 0) {
         console.log('=== 工具定义 ===');
@@ -249,7 +287,16 @@ export class AnthropicChatService extends BaseChatService {
 
       stream.on('error', (error) => {
         // 如果是中止错误，不报告错误
-        if (error instanceof Error && error.name === 'AbortError') {
+        if (
+          options?.signal?.aborted || 
+          (error instanceof Error && (
+            error.name === 'AbortError' || 
+            error.message.includes('aborted') || 
+            error.message.includes('cancelled') ||
+            error.message.includes('canceled')
+          ))
+        ) {
+          console.log('流请求已中止，不报告错误');
           return;
         }
 
@@ -263,7 +310,16 @@ export class AnthropicChatService extends BaseChatService {
       callbacks.onFinish?.();
     } catch (error) {
       // 如果是中止错误，不记录日志
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (
+        options?.signal?.aborted || 
+        (error instanceof Error && (
+          error.name === 'AbortError' || 
+          error.message.includes('aborted') || 
+          error.message.includes('cancelled') ||
+          error.message.includes('canceled')
+        ))
+      ) {
+        console.log('捕获到中止错误，请求已取消');
         return;
       }
 
@@ -323,15 +379,27 @@ export class AnthropicChatService extends BaseChatService {
       }
     });
 
+    // 包含缓存统计信息
+    const usage: Record<string, any> = {
+      promptTokens: response.usage?.input_tokens,
+      completionTokens: response.usage?.output_tokens,
+      totalTokens: response.usage ? (response.usage.input_tokens + response.usage.output_tokens) : undefined,
+    };
+
+    // 如果有缓存信息，添加到usage中
+    if (response.usage && 'cache_creation_input_tokens' in response.usage) {
+      usage.cacheCreationTokens = response.usage.cache_creation_input_tokens;
+    }
+    
+    if (response.usage && 'cache_read_input_tokens' in response.usage) {
+      usage.cacheReadTokens = response.usage.cache_read_input_tokens;
+    }
+
     return {
       content,
       toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
       modelId: response.model,
-      usage: {
-        promptTokens: response.usage?.input_tokens,
-        completionTokens: response.usage?.output_tokens,
-        totalTokens: response.usage ? (response.usage.input_tokens + response.usage.output_tokens) : undefined,
-      },
+      usage,
     };
   }
 

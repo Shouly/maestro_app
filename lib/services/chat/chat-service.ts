@@ -80,6 +80,8 @@ export interface ChatResponse {
     promptTokens?: number;
     completionTokens?: number;
     totalTokens?: number;
+    cacheCreationTokens?: number; // 缓存创建token数
+    cacheReadTokens?: number;     // 缓存读取token数
   };
 }
 
