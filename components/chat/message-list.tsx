@@ -66,7 +66,7 @@ export function MessageList() {
   const showThinking = isLastMessageFromUser && isWaitingForResponse && !streamingMessageId;
 
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 md:px-12 lg:px-20 py-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-6 max-w-4xl mx-auto w-full">
       {conversation.messages.map((message) => {
         const isMessageStreaming = chatStatus === 'streaming' && message.id === streamingMessageId;
         
@@ -104,7 +104,7 @@ function MessageItem({ message, isStreaming = false }: MessageItemProps) {
   return (
     <div className="flex items-start">
       <div
-        className={`rounded-md px-3 py-2 ${isUser
+        className={`rounded-md px-4 py-2 ${isUser
           ? 'bg-accent text-accent-foreground border border-accent/50'
           : 'bg-muted text-foreground border border-border/50'
           }`}

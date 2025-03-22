@@ -56,7 +56,7 @@ export function ChatContainer() {
                   paddingRight: isSettingsPanelOpen ? 'calc(var(--panel-width, 360px) + 1.5rem)' : '0'
                 }}
               >
-                <div className="max-w-3xl mx-auto w-full px-4 md:px-8">
+                <div className="max-w-3xl mx-auto w-full px-2 md:px-2">
                   <ChatInput />
                 </div>
               </div>

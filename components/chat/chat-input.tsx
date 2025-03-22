@@ -235,7 +235,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
 
   // 默认底部输入框 - Claude风格
   return (
-    <div className={`w-full bg-[hsl(var(--input-background))] border-t border-border/70 border-x rounded-t-xl transition-all duration-200 ${message ? 'shadow-md' : 'hover:shadow-sm'}`}>
+    <div className={`w-full bg-[hsl(var(--input-background))] border-t border-border/80 border-x rounded-t-xl transition-all duration-200 ${message ? 'shadow-md' : 'hover:shadow-sm'}`}>
       <div className="relative">
         {/* 输入区域 */}
         <div className="px-0 pt-2 pb-8 relative">
