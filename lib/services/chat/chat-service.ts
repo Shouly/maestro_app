@@ -174,111 +174,54 @@ export abstract class BaseChatService implements IChatService {
     maxTurns: number,
     systemMessage?: any
   ): any[] {
-    if (!maxTurns || maxTurns <= 0 || apiMessages.length <= 1) {
-      return apiMessages; // 如果没有设置maxTurns或消息太少，直接返回原始消息
+    // 1. 如果没有设置maxTurns，直接返回原始消息
+    if (!maxTurns || maxTurns <= 0) {
+      console.log('未设置maxTurns或值无效，不应用消息限制');
+      return apiMessages;
     }
-
-    // 分离系统消息和对话消息
-    const hasSystemMessage = systemMessage || (apiMessages.length > 0 && apiMessages[0].role === 'system');
-    const systemMsg = systemMessage || (hasSystemMessage ? apiMessages[0] : null);
-    const dialogMessages = systemMessage ? apiMessages : (hasSystemMessage ? apiMessages.slice(1) : apiMessages);
-
-    // 定义轮次类型，允许user或assistant可选
-    interface Turn {
-      user?: any;
-      assistant?: any;
+    console.log('applyMaxTurnsLimit', apiMessages, maxTurns, systemMessage);
+    // 找出系统消息和普通消息
+    const hasSystemMsg = systemMessage || (apiMessages.length > 0 && apiMessages[0].role === 'system');
+    const systemMsg = systemMessage || (hasSystemMsg ? apiMessages[0] : null);
+    const regularMessages = systemMessage ? apiMessages : (hasSystemMsg ? apiMessages.slice(1) : apiMessages);
+    console.log('regularMessages', regularMessages);
+    // 如果消息为空，直接返回
+    if (regularMessages.length === 0) {
+      return apiMessages;
     }
-
-    // 重新组织消息为轮次
-    const turns: Turn[] = [];
-    let currentTurn: Turn = {};
-
-    // 遍历所有消息，组织成轮次
-    for (let i = 0; i < dialogMessages.length; i++) {
-      const msg = dialogMessages[i];
-
-      if (msg.role === 'user') {
-        // 如果当前轮次已有user消息，先保存当前轮次，再创建新轮次
-        if (currentTurn.user) {
-          // 这种情况下可能缺少assistant回复，但我们仍将其视为一个轮次
-          turns.push({ ...currentTurn });
-          currentTurn = { user: msg };
-        } else {
-          currentTurn.user = msg;
-        }
-      } else if (msg.role === 'assistant') {
-        if (currentTurn.user) {
-          // 当前轮次已有user消息，添加assistant回复，完成一个轮次
-          currentTurn.assistant = msg;
-          turns.push({ ...currentTurn });
-          currentTurn = {};
-        } else {
-          // 如果没有对应的user消息，将assistant消息单独视为一个不完整轮次
-          turns.push({ assistant: msg });
-        }
-      }
+    
+    // 分离最新的一条消息（通常是尚未回复的用户消息）
+    const latestMessage = regularMessages[regularMessages.length - 1];
+    const previousMessages = regularMessages.slice(0, regularMessages.length - 1);
+    
+    // 2. 如果排除系统消息和最新消息后的消息数量小于maxTurns*2，直接返回原始消息
+    if (previousMessages.length <= maxTurns * 2) {
+      console.log(`历史消息数量(${previousMessages.length})不超过限制(${maxTurns * 2})，不需要裁剪`);
+      console.log('apiMessages', apiMessages);
+      return apiMessages;
     }
-
-    // 处理最后可能未完成的轮次（只有user消息，没有assistant回复）
-    if (currentTurn.user) {
-      turns.push({ ...currentTurn });
+    
+    // 3. 保留系统消息 + 最近的maxTurns轮完整对话 + 最新消息
+    console.log(`应用maxTurns限制：从${previousMessages.length}条历史消息中保留最新的${maxTurns * 2}条`);
+    
+    // 从后往前取maxTurns*2条消息
+    const keptMessages = previousMessages.slice(-maxTurns * 2);
+    
+    // 构建最终的消息数组
+    const result: any[] = [];
+    
+    // 添加系统消息（如果有）
+    if (systemMsg) {
+      result.push(systemMsg);
     }
-
-    console.log(`识别到${turns.length}个对话轮次，maxTurns设置为${maxTurns}`);
-
-    // 如果轮次数超过限制，只保留最近的maxTurns轮
-    if (turns.length > maxTurns) {
-      const keepTurns = turns.slice(-maxTurns);
-      console.log(`应用maxTurns限制: 从${turns.length}轮对话中保留最新的${keepTurns.length}轮`);
-
-      // 将轮次转换回扁平的消息列表
-      const limitedMessages: any[] = [];
-
-      // 添加系统消息（如果有）
-      if (systemMsg) {
-        limitedMessages.push(systemMsg);
-      }
-
-      // 添加保留的轮次消息
-      keepTurns.forEach(turn => {
-        if (turn.user) limitedMessages.push(turn.user);
-        if (turn.assistant) limitedMessages.push(turn.assistant);
-      });
-
-      console.log(`消息数量限制后: ${limitedMessages.length}条消息将被发送到模型`);
-      return limitedMessages;
-    }
-
-    // 如果轮次数未超过限制，返回原始消息
-    return apiMessages;
-  }
-
-  /**
-   * 将应用消息格式转换为API所需的消息格式
-   * 子类可以重写此方法来适配不同供应商的API格式
-   */
-  protected convertMessagesToApiFormat(
-    messages: Message[],
-    systemPrompt?: string
-  ): ChatMessage[] {
-    const result: ChatMessage[] = [];
-
-    // 添加系统提示(如果有)
-    if (systemPrompt) {
-      result.push({
-        role: 'system',
-        content: systemPrompt
-      });
-    }
-
-    // 添加对话历史
-    messages.forEach(msg => {
-      result.push({
-        role: msg.role as MessageRole,
-        content: msg.content
-      });
-    });
-
+    
+    // 添加保留的历史消息
+    result.push(...keptMessages);
+    
+    // 添加最新消息
+    result.push(latestMessage);
+    
+    console.log(`消息数量限制后: ${result.length}条消息将被发送到模型`);
     return result;
   }
 } 

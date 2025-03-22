@@ -36,15 +36,19 @@ export class OpenRouterChatService extends BaseChatService {
 
     try {
       // 将消息转换为OpenRouter格式
-      const apiMessages = this.convertMessages(messages, options?.systemPrompt);
+      let apiMessages = this.convertMessages(messages, options?.systemPrompt);
 
       // 限制历史消息数量，使用基类的公共方法
       if (options?.maxTurns && options.maxTurns > 0) {
+        // 直接使用返回的新数组，而不是修改原数组
         const limitedMessages = this.applyMaxTurnsLimit(apiMessages, options.maxTurns);
-        apiMessages.length = 0; // 清空原数组
-        apiMessages.push(...limitedMessages);
+        console.log('limitedMessages', limitedMessages);
+        
+        // 直接使用新数组
+        apiMessages = limitedMessages;
+        console.log('apiMessages after assignment', apiMessages);
       }
-
+      
       // 准备工具定义
       const tools = this.convertTools(options?.tools);
 
@@ -156,13 +160,17 @@ export class OpenRouterChatService extends BaseChatService {
     
     try {
       // 将消息转换为OpenAI格式
-      const apiMessages = this.convertMessages(messages);
+      let apiMessages = this.convertMessages(messages, options?.systemPrompt);
       
       // 限制历史消息数量，使用基类的公共方法
       if (options?.maxTurns && options.maxTurns > 0) {
+        // 直接使用返回的新数组，而不是修改原数组
         const limitedMessages = this.applyMaxTurnsLimit(apiMessages, options.maxTurns);
-        apiMessages.length = 0; // 清空原数组
-        apiMessages.push(...limitedMessages);
+        console.log('limitedMessages', limitedMessages);
+        
+        // 直接使用新数组
+        apiMessages = limitedMessages;
+        console.log('apiMessages after assignment', apiMessages);      
       }
       
       // 准备工具定义
@@ -176,15 +184,7 @@ export class OpenRouterChatService extends BaseChatService {
         messages: apiMessages,
         stream: true,
       };
-      
-      // 添加系统消息
-      if (options?.systemPrompt) {
-        params.messages.unshift({
-          role: 'system',
-          content: options.systemPrompt
-        });
-      }
-      
+
       // 添加工具
       if (tools && tools.length > 0) {
         params.tools = tools;
@@ -387,7 +387,7 @@ export class OpenRouterChatService extends BaseChatService {
 
     // 添加对话历史
     messages.forEach(msg => {
-      if (msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system') {
+      if (msg.role === 'user' || msg.role === 'assistant') {
         result.push({
           role: msg.role,
           content: msg.content

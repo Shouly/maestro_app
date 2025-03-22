@@ -40,13 +40,17 @@ export class AnthropicChatService extends BaseChatService {
       });
 
       // 将消息转换为Anthropic格式
-      const apiMessages = this.convertMessages(messages);
+      let apiMessages = this.convertMessages(messages);
       
       // 限制历史消息数量，使用基类的公共方法
       if (options?.maxTurns && options.maxTurns > 0) {
+        // 直接使用返回的新数组，而不是修改原数组
         const limitedMessages = this.applyMaxTurnsLimit(apiMessages, options.maxTurns);
-        apiMessages.length = 0; // 清空原数组
-        apiMessages.push(...limitedMessages);
+        console.log('limitedMessages', limitedMessages);
+        
+        // 直接使用新数组
+        apiMessages = limitedMessages;
+        console.log('apiMessages after assignment', apiMessages);
       }
 
       // 准备工具定义
@@ -156,13 +160,17 @@ export class AnthropicChatService extends BaseChatService {
       callbacks.onStart?.();
       
       // 将消息转换为Anthropic格式
-      const apiMessages = this.convertMessages(messages);
+      let apiMessages = this.convertMessages(messages);
       
       // 限制历史消息数量，使用基类的公共方法
       if (options?.maxTurns && options.maxTurns > 0) {
+        // 直接使用返回的新数组，而不是修改原数组
         const limitedMessages = this.applyMaxTurnsLimit(apiMessages, options.maxTurns);
-        apiMessages.length = 0; // 清空原数组
-        apiMessages.push(...limitedMessages);
+        console.log('limitedMessages', limitedMessages);
+        
+        // 直接使用新数组
+        apiMessages = limitedMessages;
+        console.log('apiMessages after assignment', apiMessages);
       }
       
       // 准备工具定义
