@@ -67,6 +67,7 @@ export interface ChatRequestOptions {
   maxTurns?: number;
   tools?: Tool[];
   toolResults?: ToolCallResult[];
+  signal?: AbortSignal;
 }
 
 /**

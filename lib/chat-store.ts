@@ -35,6 +35,9 @@ export interface Conversation {
   maxTokens?: number;  // 生成的最大token数
 }
 
+// 聊天状态类型
+export type ChatStatus = 'idle' | 'loading' | 'streaming' | 'success' | 'error';
+
 // 聊天状态接口
 interface ChatState {
   // 所有对话
@@ -43,10 +46,17 @@ interface ChatState {
   activeConversationId: string | null;
   // 全局默认对话设置
   defaultSettings: ConversationSettings;
+  
+  // 聊天状态相关
+  chatStatus: ChatStatus;
+  streamingMessageId: string | null;
+  lastError: string | null;
+  abortController: AbortController | null;
+  
   // 添加新对话
   createConversation: (title?: string) => string;
   // 添加消息到当前对话
-  addMessage: (message: Omit<Message, 'id'>) => void;
+  addMessage: (message: Omit<Message, 'id'>) => string;
   // 设置活动对话
   setActiveConversation: (conversationId: string) => void;
   // 获取当前活动对话
@@ -66,6 +76,13 @@ interface ChatState {
   ) => void;
   // 获取默认设置
   getDefaultSettings: () => ConversationSettings;
+  
+  // 状态管理方法
+  setChatStatus: (status: ChatStatus) => void;
+  setStreamingMessageId: (messageId: string | null) => void;
+  setLastError: (error: string | null) => void;
+  setAbortController: (controller: AbortController | null) => void;
+  abortChat: () => void;
 }
 
 // 生成唯一ID
@@ -78,6 +95,12 @@ export const useChatStore = create<ChatState>()(
       conversations: [],
       activeConversationId: null,
       defaultSettings: {}, // 初始化默认设置为空对象
+      
+      // 聊天状态相关初始值
+      chatStatus: 'idle',
+      streamingMessageId: null,
+      lastError: null,
+      abortController: null,
 
       // 创建新对话
       createConversation: (title) => {
@@ -101,7 +124,7 @@ export const useChatStore = create<ChatState>()(
         return id;
       },
 
-      // 添加消息到当前对话
+      // 添加消息到当前对话，返回新消息的ID
       addMessage: (message) => {
         const { activeConversationId, conversations } = get();
         
@@ -110,10 +133,12 @@ export const useChatStore = create<ChatState>()(
           set({ activeConversationId: newId });
         }
 
+        const newMessageId = generateId();
+        
         set((state) => {
           const newMessage: Message = {
             ...message,
-            id: generateId(),
+            id: newMessageId,
           };
 
           const updatedConversations = state.conversations.map((conv) => {
@@ -152,6 +177,8 @@ export const useChatStore = create<ChatState>()(
             conversations: updatedConversations,
           };
         });
+        
+        return newMessageId;
       },
 
       // 设置活动对话
@@ -236,9 +263,29 @@ export const useChatStore = create<ChatState>()(
           ),
         }));
       },
+      
+      // 状态管理方法
+      setChatStatus: (status) => set({ chatStatus: status }),
+      setStreamingMessageId: (messageId) => set({ streamingMessageId: messageId }),
+      setLastError: (error) => set({ lastError: error }),
+      setAbortController: (controller) => set({ abortController: controller }),
+      abortChat: () => {
+        const controller = get().abortController;
+        if (controller) {
+          controller.abort();
+          set({ abortController: null });
+        }
+        set({ chatStatus: 'idle', streamingMessageId: null });
+      },
     }),
     {
       name: STORAGE_KEYS.CHAT,
+      // 仅保存需要持久化的状态，忽略临时状态
+      partialize: (state) => ({
+        conversations: state.conversations,
+        activeConversationId: state.activeConversationId,
+        defaultSettings: state.defaultSettings,
+      }),
     }
   )
 ); 

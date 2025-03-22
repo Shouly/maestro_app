@@ -140,39 +140,42 @@ export class OpenRouterChatService extends BaseChatService {
       callbacks.onError?.(new Error('OpenRouter API密钥未配置'));
       return;
     }
-
+    
+    // 获取API基础URL
     const baseUrl = this.getBaseUrl() || 'https://openrouter.ai/api/v1';
-
+    
+    // 通知开始
+    callbacks.onStart?.();
+    
     try {
-      // 通知开始
-      callbacks.onStart?.();
-
-      // 将消息转换为OpenRouter格式
-      const apiMessages = this.convertMessages(messages, options?.systemPrompt);
-
+      // 将消息转换为OpenAI格式
+      const apiMessages = this.convertMessages(messages);
+      
       // 准备工具定义
       const tools = this.convertTools(options?.tools);
-
+      
       // 构建请求参数
       const params: any = {
-        model: options?.modelId || 'openai/gpt-3.5-turbo',
+        model: options?.modelId || 'openai/gpt-3.5-turbo', // 默认模型
+        max_tokens: options?.maxTokens,
+        temperature: options?.temperature,
         messages: apiMessages,
-        temperature: options?.temperature || 0.7,
-        max_tokens: options?.maxTokens || 1000,
         stream: true,
-        top_p: 1.0,
       };
-
+      
+      // 添加系统消息
+      if (options?.systemPrompt) {
+        params.messages.unshift({
+          role: 'system',
+          content: options.systemPrompt
+        });
+      }
+      
       // 添加工具
       if (tools && tools.length > 0) {
         params.tools = tools;
       }
-
-      // 如果有工具结果，则添加到最后一条消息中
-      if (options?.toolResults && options.toolResults.length > 0) {
-        this.addToolResultsToMessages(apiMessages, options.toolResults);
-      }
-
+      
       // 设置请求头
       const headers = {
         'Content-Type': 'application/json',
@@ -180,161 +183,127 @@ export class OpenRouterChatService extends BaseChatService {
         'HTTP-Referer': 'maestro-app', // 应用标识
         'X-Title': 'Maestro', // 应用名称
       };
-
-      // 打印当前用户配置信息
-      console.log('=== OpenRouter用户配置信息 ===');
-      console.log('API密钥:', apiKey ? '已配置' : '未配置');
-      console.log('基础URL:', baseUrl);
-      console.log('使用模型:', params.model);
-      console.log('系统提示词:', options?.systemPrompt || '未设置');
-      console.log('最大对话轮数:', options?.maxTurns || '未限制');
-      console.log('温度:', params.temperature);
-      console.log('最大Token数:', params.max_tokens);
-
-      // 打印完整Prompt
-      console.log('=== 发送到OpenRouter的完整Prompt ===');
-      console.log(JSON.stringify(apiMessages, null, 2));
-      if (tools && tools.length > 0) {
-        console.log('=== 工具定义 ===');
-        console.log(JSON.stringify(tools, null, 2));
-      }
-
-      // 发送请求
-      const response = await fetch(`${baseUrl}/chat/completions`, {
+      
+      // 配置fetch选项，包括中止信号
+      const fetchOptions: RequestInit = {
         method: 'POST',
         headers,
-        body: JSON.stringify(params)
-      });
-
+        body: JSON.stringify(params),
+        signal: options?.signal // 使用传入的中止信号
+      };
+      
+      // 发送请求
+      const response = await fetch(`${baseUrl}/chat/completions`, fetchOptions);
+      
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`OpenRouter API错误: ${response.status} - ${errorText}`);
+        let errorDetail = errorText;
+        
+        // 尝试解析错误响应为JSON以获取更多细节
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error && errorJson.error.message) {
+            errorDetail = errorJson.error.message;
+          }
+        } catch (e) {
+          // 如果不是有效的JSON，使用原始错误文本
+        }
+        
+        throw new Error(`OpenRouter API错误: ${response.status} - ${errorDetail}`);
       }
-
-      // 处理流式响应
+      
+      // 读取流
       const reader = response.body?.getReader();
       if (!reader) {
         throw new Error('无法获取响应流');
       }
-
-      // 处理工具调用
-      let currentToolCall: {
-        id: string;
-        function: {
-          name: string;
-          arguments: string;
-        };
-      } | null = null;
-
-      // 解码器
+      
+      // 创建文本解码器
       const decoder = new TextDecoder();
       let buffer = '';
-      let completeResponse = ''; // 用于记录完整响应内容
-
+      
+      // 用于记录完整响应内容
+      let completeResponse = '';
+      
       // 读取流
-      const processStream = async () => {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          // 打印完整的响应内容
-          console.log('=== OpenRouter完整响应内容 ===');
-          console.log(completeResponse);
-          callbacks.onFinish?.();
-          return;
+      while (true) {
+        // 检查是否中断
+        if (options?.signal?.aborted) {
+          reader.cancel();
+          break;
         }
-
+        
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          callbacks.onFinish?.();
+          break;
+        }
+        
         // 解码新的数据块
         buffer += decoder.decode(value, { stream: true });
-
+        
         // 按行分割并处理每一行
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
-
+        
         for (const line of lines) {
           if (line.trim() === '') continue;
-
+          
           // 处理SSE注释行（OpenRouter偶尔发送防超时注释）
           if (line.startsWith(':')) {
-            console.log('收到SSE注释:', line);
             continue;
           }
-
+          
           if (!line.startsWith('data: ')) continue;
-
+          
           const data = line.substring(6);
           if (data === '[DONE]') continue;
-
+          
           try {
             const json = JSON.parse(data);
-
+            
             // 检查json对象是否有效且包含choices数组
             if (!json || !json.choices || !Array.isArray(json.choices) || json.choices.length === 0) {
-              // 这可能是API的注释或进度更新，跳过处理
-              console.log('收到无效的流式响应格式:', data);
               continue;
             }
-
+            
             const delta = json.choices[0]?.delta;
-
+            
             // 如果delta不存在，可能是其他格式的消息，跳过处理
             if (!delta) {
               continue;
             }
-
+            
             if (delta?.content) {
               callbacks.onContent?.(delta.content);
               completeResponse += delta.content; // 累积完整响应
             }
-
+            
             // 处理工具调用
             if (delta?.tool_calls && delta.tool_calls.length > 0) {
-              const toolCall = delta.tool_calls[0];
-
-              if (toolCall.index === 0 && toolCall.id) {
-                // 新的工具调用
-                currentToolCall = {
-                  id: toolCall.id,
-                  function: {
-                    name: toolCall.function?.name || '',
-                    arguments: toolCall.function?.arguments || ''
-                  }
-                };
-              } else if (currentToolCall) {
-                // 继续之前的工具调用
-                if (toolCall.function?.name) {
-                  currentToolCall.function.name += toolCall.function.name;
-                }
-                if (toolCall.function?.arguments) {
-                  currentToolCall.function.arguments += toolCall.function.arguments;
-                }
-              }
-
-              // 如果工具调用完成，则触发回调
-              if (json.choices[0]?.finish_reason === 'tool_calls' && currentToolCall) {
+              for (const toolCall of delta.tool_calls) {
                 callbacks.onToolCall?.({
-                  id: currentToolCall.id,
+                  id: toolCall.id,
                   type: 'function',
                   function: {
-                    name: currentToolCall.function.name,
-                    arguments: currentToolCall.function.arguments
+                    name: toolCall.function.name,
+                    arguments: toolCall.function.arguments
                   }
                 });
-                currentToolCall = null;
               }
             }
-          } catch (err) {
-            console.error('解析流式响应出错:', err, '原始数据:', data);
-            // 继续处理下一行，不中断整个流程
-            continue;
+          } catch (error) {
+            console.error('解析SSE数据失败:', error, line);
           }
         }
-
-        // 继续处理
-        processStream();
-      };
-
-      await processStream();
+      }
     } catch (error) {
+      // 如果是中止错误，不报告错误
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+      
       console.error('OpenRouter 流式API调用失败:', error);
       callbacks.onError?.(error instanceof Error ? error : new Error(String(error)));
     }

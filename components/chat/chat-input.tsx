@@ -6,9 +6,9 @@ import { motion } from 'framer-motion';
 import {
   ArrowUp,
   Globe,
-  Loader2,
   PaperclipIcon,
   Hammer,
+  Square,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useChatService } from '@/lib/hooks/use-chat-service';
@@ -20,14 +20,14 @@ interface ChatInputProps {
 
 export function ChatInput({ isCentered = false }: ChatInputProps) {
   const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { addMessage, updateConversation } = useChatStore();
-  const { streamMessage, status } = useChatService();
+  const { addMessage, updateConversation, chatStatus, abortChat } = useChatStore();
+  const { streamMessage } = useChatService();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // 获取已配置的提供商列表
   const { configuredProviders, setDefaultProvider, setDefaultModel } = useProviderStore();
-  // 添加助手消息ID引用
-  const assistantMessageIdRef = useRef<string | null>(null);
+  
+  // 判断是否在加载状态
+  const isLoading = chatStatus === 'loading' || chatStatus === 'streaming';
 
   // 自动调整输入框高度
   useEffect(() => {
@@ -40,10 +40,10 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
     }
   }, [message]);
 
-  // 实时更新加载状态
-  useEffect(() => {
-    setIsLoading(status === 'streaming' || status === 'loading');
-  }, [status]);
+  // 处理停止生成
+  const handleStopGeneration = () => {
+    abortChat();
+  };
 
   // 发送消息
   const handleSendMessage = async () => {
@@ -102,98 +102,16 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
         }
       }
 
-      // 流式生成响应
-      let currentResponse = '';
-      
+      // 流式生成响应，回调逻辑已在use-chat-service.ts中处理
       await streamMessage(
         activeConversation.messages,
         {
-          onStart: () => {
-            // 创建一个空的助手消息占位符
-            const newAssistantMessage = {
-              role: 'assistant' as const,
-              content: '',
-              timestamp: Date.now(),
-            };
-            
-            // 添加消息并获取生成的ID
-            addMessage(newAssistantMessage);
-            
-            // 获取最新的对话以获取新添加消息的ID
-            const updatedConversation = useChatStore.getState().getActiveConversation();
-            if (updatedConversation && updatedConversation.messages.length > 0) {
-              // 保存助手消息ID以供后续更新使用
-              assistantMessageIdRef.current = updatedConversation.messages[updatedConversation.messages.length - 1].id;
-            }
-            
-            currentResponse = '';
-          },
           onContent: (content) => {
-            if (!assistantMessageIdRef.current) return;
-            
-            currentResponse += content;
-            
-            // 更新助手消息，使用保存的ID
-            const currentConversation = useChatStore.getState().getActiveConversation();
-            if (!currentConversation) return;
-            
-            // 查找要更新的消息
-            const messageIndex = currentConversation.messages.findIndex(
-              msg => msg.id === assistantMessageIdRef.current
-            );
-            
-            if (messageIndex !== -1) {
-              // 创建更新后的消息数组
-              const updatedMessages = [...currentConversation.messages];
-              updatedMessages[messageIndex] = {
-                id: assistantMessageIdRef.current,
-                role: 'assistant',
-                content: currentResponse,
-                timestamp: Date.now(),
-              };
-              
-              // 更新对话
-              useChatStore.getState().updateConversation(
-                currentConversation.id,
-                { messages: updatedMessages }
-              );
-            }
+            // 内容更新由store处理，这里仅添加特殊逻辑（如果需要）
           },
           onError: (error) => {
             console.error('获取AI响应时出错:', error);
-            
-            if (!assistantMessageIdRef.current) return;
-            
-            // 在助手消息中显示错误
-            const currentConversation = useChatStore.getState().getActiveConversation();
-            if (!currentConversation) return;
-            
-            // 查找要更新的消息
-            const messageIndex = currentConversation.messages.findIndex(
-              msg => msg.id === assistantMessageIdRef.current
-            );
-            
-            if (messageIndex !== -1) {
-              // 创建更新后的消息数组
-              const updatedMessages = [...currentConversation.messages];
-              updatedMessages[messageIndex] = {
-                id: assistantMessageIdRef.current,
-                role: 'assistant',
-                content: currentResponse + '\n\n[错误: ' + error.message + ']',
-                timestamp: Date.now(),
-              };
-              
-              // 更新对话
-              useChatStore.getState().updateConversation(
-                currentConversation.id,
-                { messages: updatedMessages }
-              );
-            }
           },
-          onFinish: () => {
-            // 完成时清空ID引用
-            assistantMessageIdRef.current = null;
-          }
         },
         {
           modelId: activeConversation.modelId,
@@ -205,35 +123,6 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
       );
     } catch (error) {
       console.error('发送消息失败:', error);
-      
-      // 添加友好的错误提示消息
-      const activeConversation = useChatStore.getState().getActiveConversation();
-      if (activeConversation) {
-        // 检查是否已经有助手消息
-        const hasAssistantMessage = activeConversation.messages.some(
-          msg => msg.role === 'assistant' && msg.content.includes('系统提示')
-        );
-        
-        // 如果没有显示过错误提示，则添加
-        if (!hasAssistantMessage) {
-          let errorMessage = '系统提示：发送消息时出错。';
-          
-          // 根据错误类型提供具体建议
-          if (error instanceof Error) {
-            if (error.message.includes('未配置供应商') || error.message.includes('不支持的供应商')) {
-              errorMessage = '系统提示：您需要先配置并启用一个AI服务提供商才能使用对话功能。请点击左侧边栏底部的设置图标，然后在"服务提供商"选项卡中添加您的API密钥。';
-            } else {
-              errorMessage = `系统提示：发送消息时出错。${error.message}`;
-            }
-          }
-          
-          addMessage({
-            role: 'assistant',
-            content: errorMessage,
-            timestamp: Date.now(),
-          });
-        }
-      }
     }
   };
 
@@ -284,21 +173,28 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
                 disabled={isLoading}
               />
 
-              {/* 发送按钮 */}
+              {/* 发送/停止按钮 */}
               <div className="absolute bottom-3 right-4">
-                <Button
-                  variant={message.trim() ? "default" : "ghost"}
-                  onClick={handleSendMessage}
-                  disabled={!message.trim() || isLoading}
-                  className={`rounded-sm h-9 w-9 p-0 ${!message.trim() ? 'opacity-60' : ''} bg-primary hover:bg-primary/90`}
-                  title="发送消息"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
+                {isLoading ? (
+                  <Button
+                    variant="destructive"
+                    onClick={handleStopGeneration}
+                    className="rounded-sm h-9 w-9 p-0"
+                    title="停止生成"
+                  >
+                    <Square className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    variant={message.trim() ? "default" : "ghost"}
+                    onClick={handleSendMessage}
+                    disabled={!message.trim()}
+                    className={`rounded-sm h-9 w-9 p-0 ${!message.trim() ? 'opacity-60' : ''} bg-primary hover:bg-primary/90`}
+                    title="发送消息"
+                  >
                     <ArrowUp className="h-5 w-5" />
-                  )}
-                </Button>
+                  </Button>
+                )}
               </div>
 
               {/* 左下角功能图标 */}
@@ -353,29 +249,36 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
             disabled={isLoading}
           />
 
-          {/* 发送按钮 */}
+          {/* 发送/停止按钮 */}
           <div className="absolute bottom-1 right-2">
-            <Button
-              variant={message.trim() ? "default" : "ghost"}
-              onClick={handleSendMessage}
-              disabled={!message.trim() || isLoading}
-              className={`rounded-sm h-7 w-7 p-0 ${!message.trim() ? 'opacity-60' : ''} bg-primary hover:bg-primary/90`}
-              title="发送消息"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
+            {isLoading ? (
+              <Button
+                variant="destructive"
+                onClick={handleStopGeneration}
+                className="rounded-sm h-7 w-7 p-0"
+                title="停止生成"
+              >
+                <Square className="h-3.5 w-3.5" />
+              </Button>
+            ) : (
+              <Button
+                variant={message.trim() ? "default" : "ghost"}
+                onClick={handleSendMessage}
+                disabled={!message.trim()}
+                className={`rounded-sm h-7 w-7 p-0 ${!message.trim() ? 'opacity-60' : ''} bg-primary hover:bg-primary/90`}
+                title="发送消息"
+              >
                 <ArrowUp className="h-4 w-4" />
-              )}
-            </Button>
+              </Button>
+            )}
           </div>
 
-          {/* 左下角功能图标 */}
-          <div className="absolute bottom-1 left-2 flex items-center gap-2">
+          {/* 左侧功能图标 */}
+          <div className="absolute bottom-1 left-2 flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+              className="h-7 w-7 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
               title="附件"
             >
               <PaperclipIcon className="h-[14px] w-[14px]" />
@@ -384,7 +287,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+              className="h-7 w-7 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
               title="联网"
             >
               <Globe className="h-[14px] w-[14px]" />
@@ -393,7 +296,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
+              className="h-7 w-7 rounded-sm hover:bg-primary/10 text-foreground/60 hover:text-primary"
               title="工具"
             >
               <Hammer className="h-[14px] w-[14px]" />

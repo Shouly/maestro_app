@@ -173,71 +173,57 @@ export class AnthropicChatService extends BaseChatService {
         params.tools = tools;
       }
 
-      // 如果有工具结果，则添加到最后一条消息中
-      if (options?.toolResults && options?.toolResults.length > 0) {
-        const lastMessageIndex = apiMessages.length - 1;
-        if (lastMessageIndex >= 0 && apiMessages[lastMessageIndex].role === 'user') {
-          // 替换最后一条用户消息，添加工具调用结果
-          const lastMessage = apiMessages[lastMessageIndex];
-          const content = Array.isArray(lastMessage.content) 
-            ? [...lastMessage.content] 
-            : [{ type: 'text', text: lastMessage.content }];
-          
-          // 添加工具结果
-          options.toolResults.forEach(result => {
-            content.push({
-              type: 'tool_result',
-              tool_use_id: result.toolCallId,
-              content: result.result,
-            });
-          });
-          
-          // 更新消息
-          apiMessages[lastMessageIndex] = {
-            ...lastMessage,
-            content,
-          };
-        }
+      // 创建请求配置，包含中止信号
+      const requestOptions: any = {};
+      if (options?.signal) {
+        requestOptions.signal = options.signal;
       }
-
-      // 创建流式请求
-      const stream = await anthropic.messages.stream(params);
-
-      // 使用正确的事件处理API
-      let completeResponse = ''; // 用于记录完整响应内容
       
+      // 调用Anthropic API，使用stream方法
+      const stream = await anthropic.messages.stream(params, requestOptions);
+      
+      // 使用正确的事件处理API
       stream.on('text', (text) => {
+        // 如果已经中止，则不处理新内容
+        if (options?.signal?.aborted) return;
+        
         callbacks.onContent?.(text);
-        completeResponse += text; // 累积完整响应
       });
-
-      stream.on('contentBlock', (contentBlock: any) => {
-        if (contentBlock.type === 'tool_use') {
-          callbacks.onToolCall?.({
-            id: contentBlock.id,
-            type: 'function',
-            function: {
-              name: contentBlock.name,
-              arguments: JSON.stringify(contentBlock.input),
-            },
-          });
-        }
+      
+      stream.on('tool_use', (toolUse) => {
+        // 如果已经中止，则不处理工具调用
+        if (options?.signal?.aborted) return;
+        
+        callbacks.onToolCall?.({
+          id: toolUse.id,
+          type: 'function',
+          function: {
+            name: toolUse.name,
+            arguments: JSON.stringify(toolUse.input)
+          }
+        });
       });
-
+      
       stream.on('error', (error) => {
+        // 如果是中止错误，不报告错误
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+        
         callbacks.onError?.(error);
       });
-
+      
       // 等待流完成
       await stream.done();
-      
-      // 打印完整的响应内容
-      console.log('=== Anthropic完整响应内容 ===');
-      console.log(completeResponse);
       
       // 通知完成
       callbacks.onFinish?.();
     } catch (error) {
+      // 如果是中止错误，不记录日志
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+      
       console.error('Anthropic 流式API调用失败:', error);
       callbacks.onError?.(error instanceof Error ? error : new Error(String(error)));
     }

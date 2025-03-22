@@ -3,9 +3,14 @@
 import { Message, useChatStore } from '@/lib/chat-store';
 import { Bot, Sparkles } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { AnimatedDots } from '@/components/ui/animated-dots';
 
 export function MessageList() {
-  const { getActiveConversation } = useChatStore();
+  const { 
+    getActiveConversation, 
+    chatStatus, 
+    streamingMessageId 
+  } = useChatStore();
   const conversation = getActiveConversation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -17,7 +22,7 @@ export function MessageList() {
   // 当消息列表变化时，滚动到底部
   useEffect(() => {
     scrollToBottom();
-  }, [conversation?.messages]);
+  }, [conversation?.messages, chatStatus]);
 
   // 如果没有对话，则显示空状态
   if (!conversation) {
@@ -49,16 +54,39 @@ export function MessageList() {
     );
   }
 
+  // 检查是否正在等待AI响应
+  const isWaitingForResponse = chatStatus === 'loading' || chatStatus === 'streaming';
+  
+  // 检查最后一条消息是否是用户消息，以确定是否显示思考状态
+  const lastMessage = conversation.messages[conversation.messages.length - 1];
+  const isLastMessageFromUser = lastMessage?.role === 'user';
+  
+  // 是否显示思考状态
+  const showThinking = isLastMessageFromUser && isWaitingForResponse && !streamingMessageId;
+
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 md:px-12 lg:px-20 py-6 max-w-4xl mx-auto w-full">
-      {conversation.messages.map((message, index) => (
-        <MessageItem
-          key={message.id}
-          message={message}
-          isFirst={index === 0}
-          isLast={index === conversation.messages.length - 1}
-        />
-      ))}
+      {conversation.messages.map((message) => {
+        const isMessageStreaming = chatStatus === 'streaming' && message.id === streamingMessageId;
+        
+        return (
+          <MessageItem
+            key={message.id}
+            message={message}
+            isStreaming={isMessageStreaming}
+          />
+        );
+      })}
+      
+      {/* 思考状态指示器 */}
+      {showThinking && (
+        <div className="flex items-start">
+          <div className="rounded-md px-4 py-2 bg-muted/60 border border-border/30">
+            <AnimatedDots />
+          </div>
+        </div>
+      )}
+      
       <div ref={messagesEndRef} />
     </div>
   );
@@ -66,11 +94,10 @@ export function MessageList() {
 
 interface MessageItemProps {
   message: Message;
-  isFirst?: boolean;
-  isLast?: boolean;
+  isStreaming?: boolean;
 }
 
-function MessageItem({ message }: MessageItemProps) {
+function MessageItem({ message, isStreaming = false }: MessageItemProps) {
   const isUser = message.role === 'user';
 
   return (
