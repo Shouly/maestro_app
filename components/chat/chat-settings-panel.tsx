@@ -112,7 +112,7 @@ export function ChatSettingsPanel({ isOpen, onClose }: ChatSettingsPanelProps) {
       }}
     >
       <div 
-        className="flex flex-col h-full overflow-hidden rounded-lg border border-border bg-background/70"
+        className="flex flex-col h-full overflow-hidden rounded-lg border-[0.5px] border-border/60 bg-background/70"
         style={{ 
           backdropFilter: 'blur(8px)',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'

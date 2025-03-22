@@ -156,9 +156,9 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
         className="w-full"
       >
         <div 
-          className={`w-full bg-[hsl(var(--input-background))] border border-border/80 rounded-lg transition-all duration-300 
+          className={`w-full bg-[hsl(var(--input-background))] border-[0.5px] border-border/60 rounded-lg transition-all duration-300 
           ${message ? 'shadow-sm border-primary/30' : ''} 
-          hover:border-primary/30 hover:shadow-sm focus-within:border-primary/50 focus-within:shadow-md`}
+          hover:border-border hover:shadow-sm focus-within:border-border focus-within:shadow-md`}
         >
           <div className="relative">
             {/* 输入区域 */}
@@ -169,7 +169,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="有什么可以帮助您的？（Enter 发送，Shift+Enter 换行）"
-                className="w-full resize-none min-h-[56px] max-h-[220px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-6 pl-7 text-lg font-light text-foreground/90 placeholder:text-foreground/40"
+                className="w-full resize-none min-h-[56px] max-h-[220px] bg-transparent border-0 focus:outline-none focus:ring-0 p-0 pr-4 pl-4 text-md font-light text-foreground/90 placeholder:text-foreground/40"
                 disabled={isLoading}
               />
 
@@ -235,7 +235,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
 
   // 默认底部输入框 - Claude风格
   return (
-    <div className={`w-full bg-[hsl(var(--input-background))] border-t border-border/80 border-x rounded-t-xl transition-all duration-200 ${message ? 'shadow-md' : 'hover:shadow-sm'}`}>
+    <div className={`w-full bg-[hsl(var(--input-background))] border-t-[0.5px] border-border/80 border-x-[0.5px] rounded-t-xl transition-all duration-200 ${message ? 'shadow-md' : 'hover:shadow-sm'}`}>
       <div className="relative">
         {/* 输入区域 */}
         <div className="px-0 pt-2 pb-8 relative">

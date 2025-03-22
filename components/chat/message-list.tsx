@@ -105,8 +105,8 @@ function MessageItem({ message, isStreaming = false }: MessageItemProps) {
     <div className="flex items-start">
       <div
         className={`rounded-md px-4 py-2 ${isUser
-          ? 'bg-accent text-accent-foreground border border-accent/50'
-          : 'bg-muted text-foreground border border-border/50'
+          ? 'bg-accent text-accent-foreground border-[0.5px] border-accent/50'
+          : 'bg-muted text-foreground border-[0.5px] border-border/50'
           }`}
       >
         <div className="flex items-center">
