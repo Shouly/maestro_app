@@ -1,19 +1,19 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PROVIDER_PRESETS } from '@/lib/provider-presets';
 import { useProviderStore } from '@/lib/provider-store';
 import { isValidUrl } from '@/lib/utils';
-import { AlertCircle, Check, CheckCircle, Loader2, Settings, Shield, ExternalLink, RefreshCcw, ServerCog } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { AlertCircle, Check, CheckCircle, ExternalLink, Loader2, RefreshCcw, ServerCog, Settings, Shield } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ModelSelector } from '../chat/model-selector';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { motion } from 'framer-motion';
-import { Separator } from '@/components/ui/separator';
 import { ProviderIcon } from '../ui/provider-icon';
 
 export function ProviderSettings() {
@@ -47,7 +47,6 @@ export function ProviderSettings() {
         testProviderConnection,
         fetchProviderModels,
         setProviderDefaultModel,
-        getProviderDefaultModel
     } = useProviderStore();
 
     // 初始化时加载一次模型列表
@@ -102,13 +101,13 @@ export function ProviderSettings() {
         setBaseUrl('');
         setErrorMessage('');
         setSuccessMessage('');
-        
+
         // 获取供应商配置
         const configuredProvider = getProviderConfig(providerId);
         if (configuredProvider) {
             setApiKey(configuredProvider.apiKey || '');
             setBaseUrl(configuredProvider.baseUrl || '');
-            
+
             // 设置供应商默认模型值
             if (configuredProvider.defaultModelId) {
                 const newValue = `${providerId}:${configuredProvider.defaultModelId}`;
@@ -129,7 +128,7 @@ export function ProviderSettings() {
         if (predefinedProvider && !configuredProvider) {
             setBaseUrl(predefinedProvider.baseUrl);
         }
-        
+
         // 强制刷新以确保UI更新
         setRefreshCounter(prev => prev + 1);
     };
@@ -209,10 +208,10 @@ export function ProviderSettings() {
 
             if (isSuccess) {
                 setSuccessMessage('验证成功，API密钥有效。');
-                
+
                 // 验证成功后自动获取模型列表
                 await fetchProviderModels(selectedProviderId);
-                
+
                 // 自动切换到模型设置选项卡
                 setSelectedTab('模型设置');
             } else {
@@ -237,13 +236,13 @@ export function ProviderSettings() {
         }
 
         setDefaultProvider(selectedProviderId);
-        
+
         // 获取该提供商的第一个模型作为默认模型
         const provider = getPredefinedProvider(selectedProviderId);
         if (provider && provider.models.length > 0) {
             setDefaultModel(provider.models[0].id);
         }
-        
+
         setSuccessMessage('已设置为默认供应商');
         setRefreshCounter(prev => prev + 1);
     };
@@ -251,12 +250,6 @@ export function ProviderSettings() {
     // 获取供应商是否已配置
     const isProviderConfigured = (providerId: string) => {
         return configuredProviders.some(p => p.providerId === providerId && p.apiKey.trim() !== '');
-    };
-
-    // 获取供应商是否活跃
-    const isProviderActive = (providerId: string) => {
-        const provider = getProviderConfig(providerId);
-        return provider ? provider.isActive : false;
     };
 
     // 获取供应商图标
@@ -267,21 +260,21 @@ export function ProviderSettings() {
     // 处理供应商默认模型变更
     const handleProviderDefaultModelChange = (value: string) => {
         if (!selectedProviderId) return;
-        
+
         // 直接设置模型值
         setProviderDefaultModelValue(value);
-        
+
         // 从value中获取modelId部分 (修复处理方式，确保支持包含多个冒号的modelId)
         const parts = value.split(':');
         // 合并除第一个部分外的所有部分作为modelId
         const modelId = parts.slice(1).join(':');
-        
+
         // 设置该供应商的默认模型
         setProviderDefaultModel(selectedProviderId, modelId);
-        
+
         // 触发刷新
         setRefreshCounter(prev => prev + 1);
-        
+
         // 设置成功消息
         setSuccessMessage(`已设置供应商默认模型`);
     };
@@ -289,7 +282,7 @@ export function ProviderSettings() {
     // 刷新模型列表
     const handleRefreshModels = async () => {
         if (!selectedProviderId) return;
-        
+
         setIsRefreshingModels(true);
         try {
             await fetchProviderModels(selectedProviderId);
@@ -309,7 +302,7 @@ export function ProviderSettings() {
                     <ServerCog className="h-5 w-5 mr-2 text-primary" />
                     <h2 className="text-xl font-semibold">AI 供应商</h2>
                 </div>
-                
+
                 <div>
                     {selectedProviderId && isProviderConfigured(selectedProviderId) && defaultProviderId !== selectedProviderId && (
                         <Button
@@ -324,11 +317,11 @@ export function ProviderSettings() {
                     )}
                 </div>
             </div>
-            
+
             <p className="text-muted-foreground -mt-1">
                 配置AI供应商连接以开始使用应用程序。至少需要一个配置好的供应商。
             </p>
-            
+
             <Card className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                     {/* 左侧供应商列表 */}
@@ -340,7 +333,6 @@ export function ProviderSettings() {
                         <div className="space-y-2.5">
                             {PROVIDER_PRESETS.map((provider) => {
                                 const isConfigured = isProviderConfigured(provider.id);
-                                const isActive = isProviderActive(provider.id);
                                 const isSelected = selectedProviderId === provider.id;
                                 const isDefault = defaultProviderId === provider.id;
 
@@ -400,7 +392,7 @@ export function ProviderSettings() {
                                         <span className="ml-3">{getPredefinedProvider(selectedProviderId)?.name || '供应商'}</span>
                                     </h3>
                                 </div>
-                                
+
                                 <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-6">
                                     <TabsList className="mb-4 w-full max-w-md">
                                         <TabsTrigger value="基本设置" className="flex-1">基本设置</TabsTrigger>
@@ -408,7 +400,7 @@ export function ProviderSettings() {
                                             模型设置
                                         </TabsTrigger>
                                     </TabsList>
-                                    
+
                                     <TabsContent value="基本设置" className="space-y-6">
                                         <Card className="p-6 border border-border/60 bg-background shadow-sm">
                                             <div className="grid gap-6">
@@ -501,9 +493,9 @@ export function ProviderSettings() {
                                                     </p>
                                                 </div>
                                             </div>
-                                            
+
                                             <Separator className="my-6" />
-                                            
+
                                             <div className="flex justify-end">
                                                 <Button
                                                     variant="default"
@@ -521,7 +513,7 @@ export function ProviderSettings() {
                                             </div>
                                         </Card>
                                     </TabsContent>
-                                    
+
                                     <TabsContent value="模型设置" className="space-y-6">
                                         <Card className="p-6 border border-border/60 bg-background shadow-sm">
                                             <h4 className="text-base font-medium mb-4">供应商默认模型</h4>
@@ -529,10 +521,10 @@ export function ProviderSettings() {
                                                 选择当前供应商默认使用的AI模型，将在使用该供应商时优先选择。
                                             </p>
                                             <div className="mb-4">
-                                                {(() => { 
-                                                    return null; 
+                                                {(() => {
+                                                    return null;
                                                 })()}
-                                                <ModelSelector 
+                                                <ModelSelector
                                                     isDefaultSelector={false}
                                                     showOnlyConfigured={true}
                                                     filterByProviderId={selectedProviderId || undefined}
@@ -546,7 +538,7 @@ export function ProviderSettings() {
                                                 此设置仅影响当前选中的供应商。
                                             </p>
                                         </Card>
-                                        
+
                                         <Card className="p-6 border border-border/60 bg-background shadow-sm">
                                             <h4 className="text-base font-medium mb-4">模型列表管理</h4>
                                             <p className="text-sm text-muted-foreground mb-4">
