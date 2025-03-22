@@ -34,6 +34,7 @@ export class AnthropicModelService implements IModelService {
       const response = await anthropic.models.list({
         limit: 20,
       });
+
       // 将API返回的模型数据转换为应用使用的格式
       return response.data.map((model: any) => ({
         id: model.id,

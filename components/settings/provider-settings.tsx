@@ -27,7 +27,7 @@ export function ProviderSettings() {
     const [successMessage, setSuccessMessage] = useState<string>('');
     const [refreshCounter, setRefreshCounter] = useState(0);
     const [selectedTab, setSelectedTab] = useState<string>('基本设置');
-    const [defaultModelValue, setDefaultModelValue] = useState<string>('');
+    const [providerDefaultModelValue, setProviderDefaultModelValue] = useState<string>('');
     const [isRefreshingModels, setIsRefreshingModels] = useState<boolean>(false);
 
     // 初始化状态跟踪
@@ -45,7 +45,9 @@ export function ProviderSettings() {
         getPredefinedProvider,
         getProviderConfig,
         testProviderConnection,
-        fetchProviderModels
+        fetchProviderModels,
+        setProviderDefaultModel,
+        getProviderDefaultModel
     } = useProviderStore();
 
     // 初始化时加载一次模型列表
@@ -70,7 +72,8 @@ export function ProviderSettings() {
             }
         };
 
-        setTimeout(initializeModelLists, 500);
+        // 移除setTimeout，直接执行初始化
+        initializeModelLists();
 
         return () => {
             isMounted = false;
@@ -79,44 +82,56 @@ export function ProviderSettings() {
 
     // 监听刷新状态
     useEffect(() => {
-        console.log('组件状态更新:', {
-            refreshCounter,
-            providersCount: configuredProviders.length,
-            defaultProviderId,
-            defaultModelId
-        });
-        
-        // 设置默认模型选择器的值
-        if (defaultProviderId && defaultModelId) {
-            setDefaultModelValue(`${defaultProviderId}:${defaultModelId}`);
-        } else {
-            setDefaultModelValue('');
+        // 更新当前选中供应商的默认模型值
+        if (selectedProviderId) {
+            const provider = getProviderConfig(selectedProviderId);
+            if (provider && provider.defaultModelId) {
+                // 更新模型值，保留完整的ID
+                const newValue = `${selectedProviderId}:${provider.defaultModelId}`;
+                setProviderDefaultModelValue(newValue);
+            } else {
+                setProviderDefaultModelValue('');
+            }
         }
-    }, [refreshCounter, configuredProviders, defaultProviderId, defaultModelId]);
+    }, [refreshCounter, configuredProviders, defaultProviderId, defaultModelId, selectedProviderId, getProviderConfig]);
 
     // 选择供应商
     const selectProvider = (providerId: string) => {
         setSelectedProviderId(providerId);
+        setApiKey('');
+        setBaseUrl('');
         setErrorMessage('');
         setSuccessMessage('');
-        setSelectedTab('基本设置');
-
-        // 查找是否已配置
+        
+        // 获取供应商配置
         const configuredProvider = getProviderConfig(providerId);
         if (configuredProvider) {
-            setApiKey(configuredProvider.apiKey);
+            setApiKey(configuredProvider.apiKey || '');
             setBaseUrl(configuredProvider.baseUrl || '');
             
-            // 如果供应商已配置但没有加载模型列表，自动加载
-            if (!configuredProvider.customModels || configuredProvider.customModels.length === 0) {
-                fetchProviderModels(providerId).catch(console.error);
+            // 设置供应商默认模型值
+            if (configuredProvider.defaultModelId) {
+                const newValue = `${providerId}:${configuredProvider.defaultModelId}`;
+                console.log('设置供应商默认模型:', newValue);
+                // 确保状态更新
+                setProviderDefaultModelValue(newValue);
+            } else {
+                setProviderDefaultModelValue('');
+                console.log('供应商没有默认模型');
             }
         } else {
-            // 未配置，使用默认值
-            setApiKey('');
-            const preset = PROVIDER_PRESETS.find(p => p.id === providerId);
-            setBaseUrl(preset?.baseUrl || '');
+            // 如果是未配置的供应商，清空默认模型值
+            setProviderDefaultModelValue('');
         }
+
+        // 获取供应商预设
+        const predefinedProvider = getPredefinedProvider(providerId);
+        if (predefinedProvider && !configuredProvider) {
+            setBaseUrl(predefinedProvider.baseUrl);
+        }
+        
+        // 强制刷新以确保UI更新
+        setRefreshCounter(prev => prev + 1);
     };
 
     // 处理基础URL变更
@@ -157,13 +172,8 @@ export function ProviderSettings() {
                 addProvider(providerId, key, url || undefined);
             }
 
-            // 简短的成功提示并自动清除
+            // 设置成功消息，移除setTimeout
             setSuccessMessage('已保存');
-            setTimeout(() => {
-                if (successMessage === '已保存') {
-                    setSuccessMessage('');
-                }
-            }, 2000);
 
             // 更新刷新计数器以强制重新渲染
             setRefreshCounter(prev => prev + 1);
@@ -254,23 +264,26 @@ export function ProviderSettings() {
         return <ProviderIcon providerId={providerId} size={40} />;
     };
 
-    // 处理默认模型变更
-    const handleDefaultModelChange = (value: string) => {
-        setDefaultModelValue(value);
+    // 处理供应商默认模型变更
+    const handleProviderDefaultModelChange = (value: string) => {
+        if (!selectedProviderId) return;
         
-        // 将value拆分为providerId和modelId
-        const [providerId, modelId] = value.split(':');
+        // 直接设置模型值
+        setProviderDefaultModelValue(value);
         
-        // 更新默认设置
-        setDefaultProvider(providerId);
-        setDefaultModel(modelId);
+        // 从value中获取modelId部分 (修复处理方式，确保支持包含多个冒号的modelId)
+        const parts = value.split(':');
+        // 合并除第一个部分外的所有部分作为modelId
+        const modelId = parts.slice(1).join(':');
         
-        setSuccessMessage('已设置默认模型');
-        setTimeout(() => {
-            if (successMessage === '已设置默认模型') {
-                setSuccessMessage('');
-            }
-        }, 2000);
+        // 设置该供应商的默认模型
+        setProviderDefaultModel(selectedProviderId, modelId);
+        
+        // 触发刷新
+        setRefreshCounter(prev => prev + 1);
+        
+        // 设置成功消息
+        setSuccessMessage(`已设置供应商默认模型`);
     };
 
     // 刷新模型列表
@@ -280,12 +293,8 @@ export function ProviderSettings() {
         setIsRefreshingModels(true);
         try {
             await fetchProviderModels(selectedProviderId);
+            // 设置成功消息，移除setTimeout
             setSuccessMessage('模型列表已更新');
-            setTimeout(() => {
-                if (successMessage === '模型列表已更新') {
-                    setSuccessMessage('');
-                }
-            }, 2000);
         } catch (error) {
             setErrorMessage('无法获取模型列表');
         } finally {
@@ -515,21 +524,26 @@ export function ProviderSettings() {
                                     
                                     <TabsContent value="模型设置" className="space-y-6">
                                         <Card className="p-6 border border-border/60 bg-background shadow-sm">
-                                            <h4 className="text-base font-medium mb-4">默认模型设置</h4>
+                                            <h4 className="text-base font-medium mb-4">供应商默认模型</h4>
                                             <p className="text-sm text-muted-foreground mb-4">
-                                                选择默认使用的AI模型，将用于所有新建的对话。
+                                                选择当前供应商默认使用的AI模型，将在使用该供应商时优先选择。
                                             </p>
                                             <div className="mb-4">
+                                                {(() => { 
+                                                    return null; 
+                                                })()}
                                                 <ModelSelector 
-                                                    isDefaultSelector={true}
+                                                    isDefaultSelector={false}
                                                     showOnlyConfigured={true}
-                                                    value={defaultModelValue}
-                                                    onChange={handleDefaultModelChange}
+                                                    filterByProviderId={selectedProviderId || undefined}
+                                                    value={providerDefaultModelValue}
+                                                    onChange={handleProviderDefaultModelChange}
                                                     searchable={true}
+                                                    key={`model-selector-${selectedProviderId}-${refreshCounter}`}
                                                 />
                                             </div>
                                             <p className="text-xs text-muted-foreground italic">
-                                                注意：如果选择了不同供应商的模型，默认供应商也将相应变更。
+                                                此设置仅影响当前选中的供应商。
                                             </p>
                                         </Card>
                                         

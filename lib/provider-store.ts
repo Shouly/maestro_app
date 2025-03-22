@@ -22,6 +22,7 @@ export interface ConfiguredProvider {
     baseUrl?: string;     // 可选的自定义基础URL
     isActive: boolean;    // 是否激活此供应商
     customModels?: ModelPreset[]; // 从API获取的自定义模型列表
+    defaultModelId?: string; // 该供应商的默认模型ID
 }
 
 // 模型定义
@@ -71,6 +72,11 @@ interface ProviderState {
     // 测试供应商连接
     testProviderConnection: (providerId: string, apiKey: string, baseUrl?: string) => Promise<boolean>;
 
+    // 设置供应商的默认模型
+    setProviderDefaultModel: (providerId: string, modelId: string) => void;
+
+    // 获取供应商的默认模型
+    getProviderDefaultModel: (providerId: string) => string | undefined;
 }
 
 // 获取模型服务工厂实例
@@ -234,6 +240,23 @@ export const useProviderStore = create<ProviderState>()(
 
                 // 使用模型服务测试连接
                 return await modelService.testConnection(apiKey, baseUrl);
+            },
+
+            // 设置供应商的默认模型
+            setProviderDefaultModel: (providerId, modelId) => {
+                set(state => ({
+                    configuredProviders: state.configuredProviders.map(provider =>
+                        provider.providerId === providerId
+                            ? { ...provider, defaultModelId: modelId }
+                            : provider
+                    )
+                }));
+            },
+            
+            // 获取供应商的默认模型
+            getProviderDefaultModel: (providerId) => {
+                const provider = get().getProviderConfig(providerId);
+                return provider?.defaultModelId;
             }
         }),
         {

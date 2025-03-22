@@ -10,6 +10,7 @@ import { Search } from 'lucide-react';
 interface ModelSelectorProps {
   isDefaultSelector?: boolean;
   showOnlyConfigured?: boolean;
+  filterByProviderId?: string;
   value?: string;
   onChange?: (value: string) => void;
   searchable?: boolean;
@@ -22,6 +23,7 @@ interface ModelSelectorProps {
 export function ModelSelector({ 
   isDefaultSelector = false,
   showOnlyConfigured = false,
+  filterByProviderId,
   value,
   onChange,
   searchable = false
@@ -31,8 +33,15 @@ export function ModelSelector({
   
   const [modelOptions, setModelOptions] = useState<{ value: string; label: string; group: string }[]>([]);
   const [filteredOptions, setFilteredOptions] = useState<{ value: string; label: string; group: string }[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>(value || '');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // 当外部value变化时，更新内部状态
+  useEffect(() => {
+    if (value !== undefined) {
+      setSelectedModel(value);
+    }
+  }, [value]);
   
   // 获取所有可用模型并初始化选择
   useEffect(() => {
@@ -49,36 +58,38 @@ export function ModelSelector({
       models = models.filter(m => configuredProviderIds.includes(m.value.split(':')[0]));
     }
     
+    // 按供应商ID过滤
+    if (filterByProviderId) {
+      models = models.filter(m => m.value.startsWith(`${filterByProviderId}:`));
+    }
+    
     setModelOptions(models);
     setFilteredOptions(models);
     
-    // 如果外部传入value，使用外部value
-    if (value) {
-      setSelectedModel(value);
-      return;
-    }
-    
-    // 否则根据不同场景设置默认值
-    if (isDefaultSelector) {
-      // 如果是默认选择器，使用默认模型
-      if (defaultProviderId && defaultModelId) {
-        setSelectedModel(`${defaultProviderId}:${defaultModelId}`);
-      } else if (models.length > 0) {
-        setSelectedModel(models[0].value);
-      }
-    } else {
-      // 如果是对话选择器，使用当前对话或默认模型
-      const activeConversation = getActiveConversation();
-      
-      if (activeConversation && activeConversation.providerId && activeConversation.modelId) {
-        setSelectedModel(`${activeConversation.providerId}:${activeConversation.modelId}`);
-      } else if (defaultProviderId && defaultModelId) {
-        setSelectedModel(`${defaultProviderId}:${defaultModelId}`);
-      } else if (models.length > 0) {
-        setSelectedModel(models[0].value);
+    // 仅在初次加载或没有外部value时设置默认值
+    if (value === undefined || value === '') {
+      // 根据不同场景设置默认值
+      if (isDefaultSelector) {
+        // 如果是默认选择器，使用默认模型
+        if (defaultProviderId && defaultModelId) {
+          setSelectedModel(`${defaultProviderId}:${defaultModelId}`);
+        } else if (models.length > 0) {
+          setSelectedModel(models[0].value);
+        }
+      } else {
+        // 如果是对话选择器，使用当前对话或默认模型
+        const activeConversation = getActiveConversation();
+        
+        if (activeConversation && activeConversation.providerId && activeConversation.modelId) {
+          setSelectedModel(`${activeConversation.providerId}:${activeConversation.modelId}`);
+        } else if (defaultProviderId && defaultModelId) {
+          setSelectedModel(`${defaultProviderId}:${defaultModelId}`);
+        } else if (models.length > 0) {
+          setSelectedModel(models[0].value);
+        }
       }
     }
-  }, [getAvailableModels, defaultModelId, defaultProviderId, getActiveConversation, isDefaultSelector, showOnlyConfigured, value]);
+  }, [getAvailableModels, defaultModelId, defaultProviderId, getActiveConversation, isDefaultSelector, showOnlyConfigured, filterByProviderId]); // 删除value依赖，避免循环
   
   // 处理搜索
   useEffect(() => {
@@ -106,8 +117,10 @@ export function ModelSelector({
       return;
     }
     
-    // 将value拆分为providerId和modelId
-    const [providerId, modelId] = newValue.split(':');
+    // 将value拆分为providerId和modelId（支持包含多个冒号的modelId）
+    const parts = newValue.split(':');
+    const providerId = parts[0];
+    const modelId = parts.slice(1).join(':');
     
     if (isDefaultSelector) {
       // 更新默认模型设置
@@ -134,14 +147,24 @@ export function ModelSelector({
     );
   }
   
+  // 根据当前值获取显示标签
+  const getSelectedValueLabel = () => {
+    const currentValue = value !== undefined ? value : selectedModel;
+    const selectedOption = filteredOptions.find(opt => opt.value === currentValue);
+    return selectedOption ? selectedOption.label : "选择AI模型";
+  };
+  
   // 根据模型选项分组渲染下拉菜单
   return (
     <Select 
-      value={value || selectedModel} 
+      value={value !== undefined ? value : selectedModel} 
       onValueChange={handleModelChange}
+      defaultValue={value !== undefined ? value : selectedModel}
     >
       <SelectTrigger className="w-full">
-        <SelectValue placeholder="选择AI模型" />
+        <SelectValue placeholder="选择AI模型">
+          {getSelectedValueLabel()}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {searchable && (
