@@ -10,6 +10,16 @@ export interface Message {
   timestamp: number;
 }
 
+// 对话设置类型
+export interface ConversationSettings {
+  providerId?: string; 
+  modelId?: string;
+  systemPrompt?: string;
+  maxTurns?: number;
+  temperature?: number;
+  maxTokens?: number;
+}
+
 // 对话类型
 export interface Conversation {
   id: string;
@@ -31,6 +41,8 @@ interface ChatState {
   conversations: Conversation[];
   // 当前活动对话ID
   activeConversationId: string | null;
+  // 全局默认对话设置
+  defaultSettings: ConversationSettings;
   // 添加新对话
   createConversation: (title?: string) => string;
   // 添加消息到当前对话
@@ -50,15 +62,10 @@ interface ChatState {
   // 更新对话设置
   updateConversationSettings: (
     conversationId: string, 
-    settings: {
-      modelId?: string;
-      providerId?: string;
-      systemPrompt?: string;
-      maxTurns?: number;
-      temperature?: number;
-      maxTokens?: number;
-    }
+    settings: ConversationSettings
   ) => void;
+  // 获取默认设置
+  getDefaultSettings: () => ConversationSettings;
 }
 
 // 生成唯一ID
@@ -70,16 +77,20 @@ export const useChatStore = create<ChatState>()(
     (set, get) => ({
       conversations: [],
       activeConversationId: null,
+      defaultSettings: {}, // 初始化默认设置为空对象
 
       // 创建新对话
       createConversation: (title) => {
         const id = generateId();
+        const defaultSettings = get().defaultSettings;
+        
         const newConversation: Conversation = {
           id,
           title: title || `新对话 ${new Date().toLocaleString()}`,
           messages: [],
           createdAt: Date.now(),
           updatedAt: Date.now(),
+          ...defaultSettings, // 应用默认设置到新对话
         };
 
         set((state) => ({
@@ -154,6 +165,11 @@ export const useChatStore = create<ChatState>()(
         return conversations.find((conv) => conv.id === activeConversationId);
       },
 
+      // 获取默认设置
+      getDefaultSettings: () => {
+        return get().defaultSettings;
+      },
+
       // 删除对话
       deleteConversation: (conversationId) => {
         set((state) => {
@@ -206,7 +222,9 @@ export const useChatStore = create<ChatState>()(
       
       // 更新对话设置专用方法
       updateConversationSettings: (conversationId, settings) => {
+        // 同时更新全局默认设置和当前对话设置
         set((state) => ({
+          defaultSettings: { ...settings }, // 更新默认设置
           conversations: state.conversations.map((conv) =>
             conv.id === conversationId
               ? { 
