@@ -4,6 +4,7 @@
  */
 
 import { simulateResponse } from '../models/model-service';
+import { Message } from '@/lib/chat-store';
 
 // 消息角色类型
 export type MessageRole = 'user' | 'assistant' | 'system';
@@ -14,89 +15,167 @@ export interface ChatMessage {
   content: string;
 }
 
-// 聊天服务接口
-export interface IChatService {
-  /**
-   * 发送消息到AI模型并获取回复
-   * @param messages 消息历史
-   * @param providerId 供应商ID
-   * @param modelId 模型ID
-   * @param apiKey API密钥
-   * @param baseUrl 可选的自定义基础URL
-   * @returns AI回复内容
-   */
-  sendMessage(
-    messages: ChatMessage[],
-    providerId: string,
-    modelId: string,
-    apiKey: string,
-    baseUrl?: string
-  ): Promise<string>;
-  
-  /**
-   * 流式发送消息到AI模型并获取回复
-   * @param messages 消息历史
-   * @param providerId 供应商ID
-   * @param modelId 模型ID
-   * @param apiKey API密钥
-   * @param onChunk 处理每个回复片段的回调函数
-   * @param baseUrl 可选的自定义基础URL
-   * @returns 完整的AI回复内容
-   */
-  streamMessage(
-    messages: ChatMessage[],
-    providerId: string,
-    modelId: string,
-    apiKey: string,
-    onChunk: (text: string) => void,
-    baseUrl?: string
-  ): Promise<string>;
+/**
+ * 工具调用定义
+ */
+export interface Tool {
+  type: string;
+  name: string;
+  description?: string;
+  parameters?: Record<string, unknown>;
 }
 
 /**
- * 默认聊天服务实现
- * 目前使用模拟响应，将来可扩展为基于实际AI服务的实现
+ * 工具调用结果
  */
-export class ChatService implements IChatService {
+export interface ToolCallResult {
+  toolCallId: string;
+  result: string;
+}
+
+/**
+ * 工具调用请求
+ */
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+/**
+ * 消息流回调函数
+ */
+export interface ChatStreamCallbacks {
+  onStart?: () => void;
+  onContent?: (content: string) => void;
+  onToolCall?: (toolCall: ToolCall) => void;
+  onFinish?: () => void;
+  onError?: (error: Error) => void;
+}
+
+/**
+ * 聊天请求选项
+ */
+export interface ChatRequestOptions {
+  systemPrompt?: string;
+  modelId?: string;
+  temperature?: number;
+  maxTokens?: number;
+  tools?: Tool[];
+  toolResults?: ToolCallResult[];
+}
+
+/**
+ * 聊天响应
+ */
+export interface ChatResponse {
+  content: string;
+  toolCalls?: ToolCall[];
+  modelId?: string;
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+}
+
+/**
+ * 聊天服务接口
+ */
+export interface IChatService {
   /**
-   * 发送消息到AI模型并获取回复（非流式）
-   * 现在是使用模拟响应，将来会根据不同供应商实现真实API调用
+   * 获取供应商ID
+   */
+  getProviderId(): string;
+  
+  /**
+   * 发送消息并获取完整响应
+   * @param messages 对话历史
+   * @param options 请求选项
+   */
+  sendMessage(
+    messages: Message[], 
+    options?: ChatRequestOptions
+  ): Promise<ChatResponse>;
+  
+  /**
+   * 发送消息并通过流式返回响应
+   * @param messages 对话历史
+   * @param callbacks 流回调函数
+   * @param options 请求选项
+   */
+  streamMessage(
+    messages: Message[], 
+    callbacks: ChatStreamCallbacks,
+    options?: ChatRequestOptions
+  ): Promise<void>;
+  
+  /**
+   * 测试连接
+   * @param apiKey API密钥
+   * @param baseUrl 可选的基础URL
+   */
+  testConnection(apiKey: string, baseUrl?: string): Promise<boolean>;
+}
+
+/**
+ * 基础聊天服务实现
+ * 提供默认的模拟实现，各供应商的具体服务将继承此类并重写相关方法
+ */
+export abstract class BaseChatService implements IChatService {
+  /**
+   * 获取供应商ID
+   * 子类必须实现此方法
+   */
+  abstract getProviderId(): string;
+
+  /**
+   * 发送消息并获取完整响应
+   * @param messages 对话历史
+   * @param options 请求选项
    */
   async sendMessage(
-    messages: ChatMessage[],
-    providerId: string,
-    modelId: string,
-    apiKey: string,
-    baseUrl?: string
-  ): Promise<string> {
+    messages: Message[], 
+    options?: ChatRequestOptions
+  ): Promise<ChatResponse> {
     // 获取最后一条用户消息
     const lastUserMessage = messages
       .filter(msg => msg.role === 'user')
       .pop()?.content || '';
     
-    // 目前使用模拟响应，后续可改为实际API调用
-    return await simulateResponse(lastUserMessage);
+    // 默认使用模拟响应
+    const content = await simulateResponse(lastUserMessage);
+    
+    return {
+      content,
+      modelId: options?.modelId || 'default',
+    };
   }
   
   /**
-   * 流式发送消息到AI模型并获取回复
-   * 目前是简单模拟，将来会实现真实的流式API调用
+   * 发送消息并通过流式返回响应
+   * @param messages 对话历史
+   * @param callbacks 流回调函数
+   * @param options 请求选项
    */
   async streamMessage(
-    messages: ChatMessage[],
-    providerId: string,
-    modelId: string,
-    apiKey: string,
-    onChunk: (text: string) => void,
-    baseUrl?: string
-  ): Promise<string> {
-    // 获取最后一条用户消息
-    const lastUserMessage = messages
-      .filter(msg => msg.role === 'user')
-      .pop()?.content || '';
-    
-    // 模拟流式响应
-    return new Promise((resolve) => {
+    messages: Message[], 
+    callbacks: ChatStreamCallbacks,
+    options?: ChatRequestOptions
+  ): Promise<void> {
+    try {
+      // 通知开始流式响应
+      callbacks.onStart?.();
+      
+      // 获取最后一条用户消息
+      const lastUserMessage = messages
+        .filter(msg => msg.role === 'user')
+        .pop()?.content || '';
+      
+      // 生成模拟响应
       const responses = [
         `您好！我是AI助手，很高兴能帮助您解答问题。关于"${lastUserMessage.substring(0, 20)}${lastUserMessage.length > 20 ? '...' : ''}"，我的回答是：这是一个AI生成的回复，在实际应用中，这里会连接到后端服务获取真实的AI回答。`,
         `感谢您的问题。我理解您想了解关于"${lastUserMessage.substring(0, 20)}${lastUserMessage.length > 20 ? '...' : ''}"的信息。这是一个模拟回复，在完整实现中将通过API获取大语言模型的回答。`,
@@ -107,10 +186,10 @@ export class ChatService implements IChatService {
       let sentChars = 0;
       
       // 模拟每隔100ms发送一小段文字
-      const timer = setInterval(() => {
+      const sendChunk = () => {
         if (sentChars >= randomResponse.length) {
-          clearInterval(timer);
-          resolve(randomResponse);
+          // 完成流式响应
+          callbacks.onFinish?.();
           return;
         }
         
@@ -120,9 +199,57 @@ export class ChatService implements IChatService {
           randomResponse.length - sentChars
         );
         const chunk = randomResponse.substring(sentChars, sentChars + chunkSize);
-        onChunk(chunk);
+        callbacks.onContent?.(chunk);
         sentChars += chunkSize;
-      }, 100);
+        
+        // 继续发送下一个片段
+        setTimeout(sendChunk, 100);
+      };
+      
+      // 开始发送
+      sendChunk();
+    } catch (error) {
+      callbacks.onError?.(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+  
+  /**
+   * 测试连接
+   * @param apiKey API密钥
+   * @param baseUrl 可选的基础URL
+   */
+  async testConnection(apiKey: string, baseUrl?: string): Promise<boolean> {
+    // 基础实现总是返回成功
+    // 具体供应商应重写此方法进行实际连接测试
+    return Promise.resolve(true);
+  }
+  
+  /**
+   * 将应用消息格式转换为API所需的消息格式
+   * 子类可以重写此方法来适配不同供应商的API格式
+   */
+  protected convertMessagesToApiFormat(
+    messages: Message[], 
+    systemPrompt?: string
+  ): ChatMessage[] {
+    const result: ChatMessage[] = [];
+    
+    // 添加系统提示(如果有)
+    if (systemPrompt) {
+      result.push({
+        role: 'system',
+        content: systemPrompt
+      });
+    }
+    
+    // 添加对话历史
+    messages.forEach(msg => {
+      result.push({
+        role: msg.role as MessageRole,
+        content: msg.content
+      });
     });
+    
+    return result;
   }
 } 

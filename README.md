@@ -167,3 +167,62 @@ maestro/
 - **opener**: 用于打开外部文件
 
 详细的权限配置见 `src-tauri/capabilities/default.json`。
+
+# Maestro AI助手
+
+Maestro是一个现代化的AI助手应用，支持多种AI供应商，提供流畅的聊天体验。
+
+## 功能特点
+
+- **多供应商支持**：支持Anthropic、OpenRouter等多种AI供应商
+- **流式响应**：实时显示AI回复，提供更好的用户体验
+- **优雅界面**：精心设计的用户界面，具有现代感和易用性
+- **工具集成**：支持AI工具调用，扩展AI能力
+- **对话管理**：轻松管理和组织多个对话
+- **个性化设置**：自定义应用行为和外观
+
+## 支持的AI供应商
+
+Maestro目前支持以下AI供应商：
+
+- **Anthropic**：支持Claude 3系列模型（Opus、Sonnet、Haiku）
+- **OpenRouter**：支持多种模型，包括OpenAI、Anthropic、Cohere等
+
+## 技术架构
+
+Maestro采用现代化的技术栈和架构设计：
+
+- **前端**：React、TypeScript、TailwindCSS
+- **状态管理**：Zustand
+- **架构模式**：工厂模式、策略模式、单例模式
+
+### 聊天服务架构
+
+Maestro实现了灵活的聊天服务架构，便于支持多种AI供应商：
+
+- **聊天服务接口**：定义标准的聊天服务接口
+- **聊天服务工厂**：管理不同供应商的聊天服务实例
+- **特定供应商实现**：针对不同AI供应商的具体实现
+- **React钩子**：简化UI组件与聊天服务的交互
+
+## 开发指南
+
+详细的开发文档可在docs目录下找到：
+
+- [聊天服务架构](docs/chat-service.md)
+- [聊天供应商支持](docs/chat-providers.md) 
+- [开发者指南](docs/developer-guide.md)
+
+## 安装
+
+```bash
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+```
+
+## 许可
+
+本项目采用MIT许可证。

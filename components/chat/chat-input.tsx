@@ -11,6 +11,7 @@ import {
   Hammer,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { useChatService } from '@/lib/hooks/use-chat-service';
 
 // 模拟AI响应
 const simulateResponse = async (userMessage: string): Promise<string> => {
@@ -36,6 +37,7 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { addMessage } = useChatStore();
+  const { streamMessage, status } = useChatService();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // 自动调整输入框高度
@@ -49,6 +51,11 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
     }
   }, [message]);
 
+  // 实时更新加载状态
+  useEffect(() => {
+    setIsLoading(status === 'streaming' || status === 'loading');
+  }, [status]);
+
   // 发送消息
   const handleSendMessage = async () => {
     if (!message.trim() || isLoading) return;
@@ -60,27 +67,83 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
       timestamp: Date.now(),
     });
 
+    // 获取当前对话历史
+    const activeConversation = useChatStore.getState().getActiveConversation();
+    if (!activeConversation) return;
+
     // 清空输入框
     setMessage('');
-
-    // 显示加载状态
-    setIsLoading(true);
-
+    
     try {
-      // 获取AI响应
-      const response = await simulateResponse(message.trim());
-
-      // 添加AI响应
-      addMessage({
-        role: 'assistant',
-        content: response,
-        timestamp: Date.now(),
-      });
+      // 流式生成响应
+      let currentResponse = '';
+      
+      await streamMessage(
+        activeConversation.messages,
+        {
+          onStart: () => {
+            // 创建一个空的助手消息占位符
+            addMessage({
+              role: 'assistant',
+              content: '',
+              timestamp: Date.now(),
+            });
+            currentResponse = '';
+          },
+          onContent: (content) => {
+            currentResponse += content;
+            
+            // 更新助手消息
+            const messages = [...activeConversation.messages];
+            const lastMessageIndex = messages.length;
+            
+            useChatStore.getState().updateConversation(
+              activeConversation.id,
+              {
+                messages: [
+                  ...messages.slice(0, lastMessageIndex),
+                  {
+                    id: messages[lastMessageIndex - 1].id,
+                    role: 'assistant',
+                    content: currentResponse,
+                    timestamp: Date.now(),
+                  },
+                ],
+              }
+            );
+          },
+          onError: (error) => {
+            console.error('获取AI响应时出错:', error);
+            
+            // 在助手消息中显示错误
+            const messages = [...activeConversation.messages];
+            const lastMessageIndex = messages.length;
+            
+            if (lastMessageIndex > 0 && messages[lastMessageIndex - 1].role === 'assistant') {
+              useChatStore.getState().updateConversation(
+                activeConversation.id,
+                {
+                  messages: [
+                    ...messages.slice(0, lastMessageIndex),
+                    {
+                      id: messages[lastMessageIndex - 1].id,
+                      role: 'assistant',
+                      content: currentResponse + '\n\n[错误: ' + error.message + ']',
+                      timestamp: Date.now(),
+                    },
+                  ],
+                }
+              );
+            }
+          },
+        },
+        {
+          systemPrompt: activeConversation.systemPrompt,
+          modelId: activeConversation.modelId,
+        }
+      );
     } catch (error) {
-      console.error('获取AI响应时出错:', error);
-      // 可以在这里添加错误处理逻辑
-    } finally {
-      setIsLoading(false);
+      console.error('发送消息失败:', error);
     }
   };
 

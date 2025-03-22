@@ -1,0 +1,315 @@
+/**
+ * Anthropic聊天服务
+ * 基于Anthropic官方SDK实现的聊天服务
+ */
+
+import { BaseChatService, ChatRequestOptions, ChatResponse, ChatStreamCallbacks, Tool, ToolCallResult } from './chat-service';
+import { Message } from '@/lib/chat-store';
+import Anthropic from '@anthropic-ai/sdk';
+import { useProviderStore } from '@/lib/provider-store';
+
+/**
+ * Anthropic聊天服务实现
+ */
+export class AnthropicChatService extends BaseChatService {
+  /**
+   * 获取供应商ID
+   */
+  getProviderId(): string {
+    return 'anthropic';
+  }
+
+  /**
+   * 发送消息并获取完整响应
+   * @param messages 对话历史
+   * @param options 请求选项
+   */
+  async sendMessage(
+    messages: Message[],
+    options?: ChatRequestOptions
+  ): Promise<ChatResponse> {
+    const apiKey = this.getApiKey();
+    if (!apiKey) {
+      throw new Error('Anthropic API密钥未配置');
+    }
+
+    // 创建Anthropic客户端
+    const anthropic = new Anthropic({
+      apiKey,
+    });
+
+    try {
+      // 将消息转换为Anthropic格式
+      const apiMessages = this.convertMessages(messages);
+      
+      // 准备工具定义
+      const tools = this.convertTools(options?.tools);
+      
+      // 构建请求参数
+      const params: any = {
+        model: options?.modelId || 'claude-3-opus-20240229',
+        max_tokens: options?.maxTokens || 4000,
+        temperature: options?.temperature || 0.7,
+        messages: apiMessages,
+      };
+      
+      // 添加系统消息
+      if (options?.systemPrompt) {
+        params.system = options.systemPrompt;
+      }
+      
+      // 添加工具
+      if (tools && tools.length > 0) {
+        params.tools = tools;
+      }
+
+      // 如果有工具结果，则添加到最后一条消息中
+      if (options?.toolResults && options.toolResults.length > 0) {
+        const lastMessageIndex = apiMessages.length - 1;
+        if (lastMessageIndex >= 0 && apiMessages[lastMessageIndex].role === 'user') {
+          // 替换最后一条用户消息，添加工具调用结果
+          const lastMessage = apiMessages[lastMessageIndex];
+          const content = Array.isArray(lastMessage.content) 
+            ? [...lastMessage.content] 
+            : [{ type: 'text', text: lastMessage.content }];
+          
+          // 添加工具结果
+          options.toolResults.forEach(result => {
+            content.push({
+              type: 'tool_result',
+              tool_use_id: result.toolCallId,
+              content: result.result,
+            });
+          });
+          
+          // 更新消息
+          apiMessages[lastMessageIndex] = {
+            ...lastMessage,
+            content,
+          };
+        }
+      }
+
+      // 发送请求
+      const response = await anthropic.messages.create(params);
+
+      // 提取响应内容
+      return this.extractResponse(response);
+    } catch (error) {
+      console.error('Anthropic API调用失败:', error);
+      throw new Error(`Anthropic API调用失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * 发送消息并通过流式返回响应
+   * @param messages 对话历史
+   * @param callbacks 流回调函数
+   * @param options 请求选项
+   */
+  async streamMessage(
+    messages: Message[],
+    callbacks: ChatStreamCallbacks,
+    options?: ChatRequestOptions
+  ): Promise<void> {
+    const apiKey = this.getApiKey();
+    if (!apiKey) {
+      callbacks.onError?.(new Error('Anthropic API密钥未配置'));
+      return;
+    }
+
+    // 创建Anthropic客户端
+    const anthropic = new Anthropic({
+      apiKey,
+    });
+
+    try {
+      // 通知开始
+      callbacks.onStart?.();
+      
+      // 将消息转换为Anthropic格式
+      const apiMessages = this.convertMessages(messages);
+      
+      // 准备工具定义
+      const tools = this.convertTools(options?.tools);
+      
+      // 构建请求参数
+      const params: any = {
+        model: options?.modelId || 'claude-3-opus-20240229',
+        max_tokens: options?.maxTokens || 4000,
+        temperature: options?.temperature || 0.7,
+        messages: apiMessages,
+        stream: true,
+      };
+      
+      // 添加系统消息
+      if (options?.systemPrompt) {
+        params.system = options.systemPrompt;
+      }
+      
+      // 添加工具
+      if (tools && tools.length > 0) {
+        params.tools = tools;
+      }
+
+      // 如果有工具结果，则添加到最后一条消息中
+      if (options?.toolResults && options?.toolResults.length > 0) {
+        const lastMessageIndex = apiMessages.length - 1;
+        if (lastMessageIndex >= 0 && apiMessages[lastMessageIndex].role === 'user') {
+          // 替换最后一条用户消息，添加工具调用结果
+          const lastMessage = apiMessages[lastMessageIndex];
+          const content = Array.isArray(lastMessage.content) 
+            ? [...lastMessage.content] 
+            : [{ type: 'text', text: lastMessage.content }];
+          
+          // 添加工具结果
+          options.toolResults.forEach(result => {
+            content.push({
+              type: 'tool_result',
+              tool_use_id: result.toolCallId,
+              content: result.result,
+            });
+          });
+          
+          // 更新消息
+          apiMessages[lastMessageIndex] = {
+            ...lastMessage,
+            content,
+          };
+        }
+      }
+
+      // 创建流式请求
+      const stream = await anthropic.messages.stream(params);
+
+      // 使用正确的事件处理API
+      stream.on('text', (text) => {
+        callbacks.onContent?.(text);
+      });
+
+      stream.on('contentBlock', (contentBlock: any) => {
+        if (contentBlock.type === 'tool_use') {
+          callbacks.onToolCall?.({
+            id: contentBlock.id,
+            type: 'function',
+            function: {
+              name: contentBlock.name,
+              arguments: JSON.stringify(contentBlock.input),
+            },
+          });
+        }
+      });
+
+      stream.on('error', (error) => {
+        callbacks.onError?.(error);
+      });
+
+      // 等待流完成
+      await stream.done();
+      
+      // 通知完成
+      callbacks.onFinish?.();
+    } catch (error) {
+      console.error('Anthropic 流式API调用失败:', error);
+      callbacks.onError?.(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  /**
+   * 测试连接
+   * @param apiKey API密钥
+   * @param baseUrl 可选的基础URL
+   */
+  async testConnection(apiKey: string, baseUrl?: string): Promise<boolean> {
+    try {
+      const anthropic = new Anthropic({
+        apiKey,
+        baseURL: baseUrl,
+      });
+
+      // 调用简单API测试连接
+      await anthropic.messages.create({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 1,
+        messages: [{ role: 'user', content: 'Hello' }],
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Anthropic连接测试失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 将应用消息格式转换为Anthropic消息格式
+   */
+  private convertMessages(messages: Message[]): any[] {
+    return messages.map(msg => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+  }
+
+  /**
+   * 将工具定义转换为Anthropic工具格式
+   */
+  private convertTools(tools?: Tool[]): any[] | undefined {
+    if (!tools || tools.length === 0) {
+      return undefined;
+    }
+
+    return tools.map(tool => ({
+      name: tool.name,
+      description: tool.description || '',
+      input_schema: {
+        type: 'object',
+        properties: tool.parameters || {},
+      },
+    }));
+  }
+
+  /**
+   * 从Anthropic响应中提取内容
+   */
+  private extractResponse(response: any): ChatResponse {
+    let content = '';
+    const toolCalls: any[] = [];
+
+    // 处理响应内容块
+    response.content.forEach((block: any) => {
+      if (block.type === 'text') {
+        content += block.text;
+      } else if (block.type === 'tool_use') {
+        toolCalls.push({
+          id: block.id,
+          type: 'function',
+          function: {
+            name: block.name,
+            arguments: JSON.stringify(block.input),
+          },
+        });
+      }
+    });
+
+    return {
+      content,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+      modelId: response.model,
+      usage: {
+        promptTokens: response.usage?.input_tokens,
+        completionTokens: response.usage?.output_tokens,
+        totalTokens: response.usage ? (response.usage.input_tokens + response.usage.output_tokens) : undefined,
+      },
+    };
+  }
+
+  /**
+   * 获取API密钥
+   */
+  private getApiKey(): string | null {
+    // 从供应商配置中获取API密钥
+    const providerConfig = useProviderStore.getState().getProviderConfig('anthropic');
+    return providerConfig?.apiKey || null;
+  }
+} 
