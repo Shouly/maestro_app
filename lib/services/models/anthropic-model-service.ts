@@ -2,9 +2,9 @@
  * Anthropic 模型服务实现
  */
 
+import Anthropic from '@anthropic-ai/sdk';
 import { ModelPreset } from '../../provider-presets';
 import { IModelService } from './model-service';
-
 /**
  * Anthropic模型服务实现
  * 通过Anthropic API获取和管理Claude系列模型
@@ -12,37 +12,30 @@ import { IModelService } from './model-service';
 export class AnthropicModelService implements IModelService {
   private readonly providerId = 'anthropic';
   private readonly defaultBaseUrl = 'https://api.anthropic.com/v1';
-  
+
   /**
    * 获取供应商ID
    */
   getProviderId(): string {
     return this.providerId;
   }
-  
+
   /**
    * 获取Anthropic支持的模型列表
    */
   async fetchModels(apiKey: string, baseUrl?: string): Promise<ModelPreset[]> {
-    const url = `${baseUrl || this.defaultBaseUrl}/models`;
-    
+
     try {
-      const response = await fetch(url, {
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json'
-        }
+      const anthropic = new Anthropic({
+        apiKey,
+        dangerouslyAllowBrowser: true
       });
-      
-      if (!response.ok) {
-        throw new Error(`获取模型失败: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
+
+      const response = await anthropic.models.list({
+        limit: 20,
+      });
       // 将API返回的模型数据转换为应用使用的格式
-      return data.models.map((model: any) => ({
+      return response.data.map((model: any) => ({
         id: model.id,
         name: model.display_name || model.id,
         maxTokens: model.context_window || 100000
@@ -52,24 +45,24 @@ export class AnthropicModelService implements IModelService {
       return [];
     }
   }
-  
+
   /**
    * 测试Anthropic API连接
    */
   async testConnection(apiKey: string, baseUrl?: string): Promise<boolean> {
-    const url = `${baseUrl || this.defaultBaseUrl}/models`;
-    
+
     try {
-      const response = await fetch(url, {
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json'
-        }
+      const anthropic = new Anthropic({
+        apiKey,
+        dangerouslyAllowBrowser: true
       });
-      
-      return response.ok;
-    } catch {
+
+      await anthropic.models.list({
+        limit: 20,
+      });
+      return true;
+    } catch (error) {
+      console.error('Anthropic连接测试失败:', error);
       return false;
     }
   }

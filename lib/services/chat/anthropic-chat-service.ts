@@ -3,10 +3,10 @@
  * 基于Anthropic官方SDK实现的聊天服务
  */
 
-import { BaseChatService, ChatRequestOptions, ChatResponse, ChatStreamCallbacks, Tool, ToolCallResult } from './chat-service';
 import { Message } from '@/lib/chat-store';
-import Anthropic from '@anthropic-ai/sdk';
 import { useProviderStore } from '@/lib/provider-store';
+import Anthropic from '@anthropic-ai/sdk';
+import { BaseChatService, ChatRequestOptions, ChatResponse, ChatStreamCallbacks, Tool } from './chat-service';
 
 /**
  * Anthropic聊天服务实现
@@ -41,13 +41,13 @@ export class AnthropicChatService extends BaseChatService {
 
       // 将消息转换为Anthropic格式
       let apiMessages = this.convertMessages(messages);
-      
+
       // 限制历史消息数量，使用基类的公共方法
       if (options?.maxTurns && options.maxTurns > 0) {
         // 直接使用返回的新数组，而不是修改原数组
         const limitedMessages = this.applyMaxTurnsLimit(apiMessages, options.maxTurns);
         console.log('limitedMessages', limitedMessages);
-        
+
         // 直接使用新数组
         apiMessages = limitedMessages;
         console.log('apiMessages after assignment', apiMessages);
@@ -55,7 +55,7 @@ export class AnthropicChatService extends BaseChatService {
 
       // 准备工具定义
       const tools = this.convertTools(options?.tools);
-      
+
       // 构建请求参数
       const params: any = {
         model: options?.modelId || 'claude-3-opus-20240229',
@@ -63,17 +63,17 @@ export class AnthropicChatService extends BaseChatService {
         temperature: options?.temperature || 0.7,
         messages: apiMessages,
       };
-      
+
       // 添加系统消息
       if (options?.systemPrompt) {
         params.system = options.systemPrompt;
       }
-      
+
       // 添加工具
       if (tools && tools.length > 0) {
         params.tools = tools;
       }
-      
+
       // 打印当前用户配置信息
       console.log('=== Anthropic用户配置信息 ===');
       console.log('API密钥:', apiKey ? '已配置' : '未配置');
@@ -81,7 +81,7 @@ export class AnthropicChatService extends BaseChatService {
       console.log('系统提示词:', params.system || '未设置');
       console.log('温度:', params.temperature);
       console.log('最大Token数:', params.max_tokens);
-      
+
       // 打印完整Prompt
       console.log('=== 发送到Anthropic的完整Prompt ===');
       console.log('系统提示词:', params.system || '未设置');
@@ -97,10 +97,10 @@ export class AnthropicChatService extends BaseChatService {
         if (lastMessageIndex >= 0 && apiMessages[lastMessageIndex].role === 'user') {
           // 替换最后一条用户消息，添加工具调用结果
           const lastMessage = apiMessages[lastMessageIndex];
-          const content = Array.isArray(lastMessage.content) 
-            ? [...lastMessage.content] 
+          const content = Array.isArray(lastMessage.content)
+            ? [...lastMessage.content]
             : [{ type: 'text', text: lastMessage.content }];
-          
+
           // 添加工具结果
           options.toolResults.forEach(result => {
             content.push({
@@ -109,7 +109,7 @@ export class AnthropicChatService extends BaseChatService {
               content: result.result,
             });
           });
-          
+
           // 更新消息
           apiMessages[lastMessageIndex] = {
             ...lastMessage,
@@ -158,24 +158,24 @@ export class AnthropicChatService extends BaseChatService {
     try {
       // 通知开始
       callbacks.onStart?.();
-      
+
       // 将消息转换为Anthropic格式
       let apiMessages = this.convertMessages(messages);
-      
+
       // 限制历史消息数量，使用基类的公共方法
       if (options?.maxTurns && options.maxTurns > 0) {
         // 直接使用返回的新数组，而不是修改原数组
         const limitedMessages = this.applyMaxTurnsLimit(apiMessages, options.maxTurns);
         console.log('limitedMessages', limitedMessages);
-        
+
         // 直接使用新数组
         apiMessages = limitedMessages;
         console.log('apiMessages after assignment', apiMessages);
       }
-      
+
       // 准备工具定义
       const tools = this.convertTools(options?.tools);
-      
+
       // 构建请求参数
       const params: any = {
         model: options?.modelId || 'claude-3-opus-20240229',
@@ -184,17 +184,17 @@ export class AnthropicChatService extends BaseChatService {
         messages: apiMessages,
         stream: true,
       };
-      
+
       // 添加系统消息
       if (options?.systemPrompt) {
         params.system = options.systemPrompt;
       }
-      
+
       // 添加工具
       if (tools && tools.length > 0) {
         params.tools = tools;
       }
-      
+
       // 打印当前用户配置信息
       console.log('=== Anthropic流式请求配置信息 ===');
       console.log('API密钥:', apiKey ? '已配置' : '未配置');
@@ -202,7 +202,7 @@ export class AnthropicChatService extends BaseChatService {
       console.log('系统提示词:', params.system || '未设置');
       console.log('温度:', params.temperature);
       console.log('最大Token数:', params.max_tokens);
-      
+
       // 打印完整Prompt
       console.log('=== 发送到Anthropic的完整Prompt(流式) ===');
       console.log('系统提示词:', params.system || '未设置');
@@ -217,23 +217,23 @@ export class AnthropicChatService extends BaseChatService {
       if (options?.signal) {
         requestOptions.signal = options.signal;
       }
-      
+
       // 调用Anthropic API，使用stream方法
       const stream = await anthropic.messages.stream(params, requestOptions);
-      
+
       // 使用正确的事件处理API
       stream.on('text', (text) => {
         // 如果已经中止，则不处理新内容
         if (options?.signal?.aborted) return;
-        
+
         callbacks.onContent?.(text);
       });
-      
+
       // 处理工具调用（适配 Anthropic SDK 的事件类型）
       const handleToolUse = (toolUse: any) => {
         // 如果已经中止，则不处理工具调用
         if (options?.signal?.aborted) return;
-        
+
         callbacks.onToolCall?.({
           id: toolUse.id,
           type: 'function',
@@ -243,22 +243,22 @@ export class AnthropicChatService extends BaseChatService {
           }
         });
       };
-      
+
       // 注册工具调用监听器
       (stream as any).on('tool_use', handleToolUse);
-      
+
       stream.on('error', (error) => {
         // 如果是中止错误，不报告错误
         if (error instanceof Error && error.name === 'AbortError') {
           return;
         }
-        
+
         callbacks.onError?.(error);
       });
-      
+
       // 等待流完成
       await stream.done();
-      
+
       // 通知完成
       callbacks.onFinish?.();
     } catch (error) {
@@ -266,35 +266,9 @@ export class AnthropicChatService extends BaseChatService {
       if (error instanceof Error && error.name === 'AbortError') {
         return;
       }
-      
+
       console.error('Anthropic 流式API调用失败:', error);
       callbacks.onError?.(error instanceof Error ? error : new Error(String(error)));
-    }
-  }
-
-  /**
-   * 测试连接
-   * @param apiKey API密钥
-   * @param baseUrl 可选的基础URL
-   */
-  async testConnection(apiKey: string, baseUrl?: string): Promise<boolean> {
-    try {
-      const anthropic = new Anthropic({
-        apiKey,
-        baseURL: baseUrl,
-      });
-
-      // 调用简单API测试连接
-      await anthropic.messages.create({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 1,
-        messages: [{ role: 'user', content: 'Hello' }],
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Anthropic连接测试失败:', error);
-      return false;
     }
   }
 

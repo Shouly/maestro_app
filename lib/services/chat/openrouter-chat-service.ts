@@ -43,12 +43,12 @@ export class OpenRouterChatService extends BaseChatService {
         // 直接使用返回的新数组，而不是修改原数组
         const limitedMessages = this.applyMaxTurnsLimit(apiMessages, options.maxTurns);
         console.log('limitedMessages', limitedMessages);
-        
+
         // 直接使用新数组
         apiMessages = limitedMessages;
         console.log('apiMessages after assignment', apiMessages);
       }
-      
+
       // 准备工具定义
       const tools = this.convertTools(options?.tools);
 
@@ -151,31 +151,31 @@ export class OpenRouterChatService extends BaseChatService {
       callbacks.onError?.(new Error('OpenRouter API密钥未配置'));
       return;
     }
-    
+
     // 获取API基础URL
     const baseUrl = this.getBaseUrl() || 'https://openrouter.ai/api/v1';
-    
+
     // 通知开始
     callbacks.onStart?.();
-    
+
     try {
       // 将消息转换为OpenAI格式
       let apiMessages = this.convertMessages(messages, options?.systemPrompt);
-      
+
       // 限制历史消息数量，使用基类的公共方法
       if (options?.maxTurns && options.maxTurns > 0) {
         // 直接使用返回的新数组，而不是修改原数组
         const limitedMessages = this.applyMaxTurnsLimit(apiMessages, options.maxTurns);
         console.log('limitedMessages', limitedMessages);
-        
+
         // 直接使用新数组
         apiMessages = limitedMessages;
-        console.log('apiMessages after assignment', apiMessages);      
+        console.log('apiMessages after assignment', apiMessages);
       }
-      
+
       // 准备工具定义
       const tools = this.convertTools(options?.tools);
-      
+
       // 构建请求参数
       const params: any = {
         model: options?.modelId || 'openai/gpt-3.5-turbo', // 默认模型
@@ -189,7 +189,7 @@ export class OpenRouterChatService extends BaseChatService {
       if (tools && tools.length > 0) {
         params.tools = tools;
       }
-      
+
       // 打印当前用户配置信息
       console.log('=== OpenRouter流式请求配置信息 ===');
       console.log('API密钥:', apiKey ? '已配置' : '未配置');
@@ -207,7 +207,7 @@ export class OpenRouterChatService extends BaseChatService {
         console.log('=== 工具定义 ===');
         console.log(JSON.stringify(tools, null, 2));
       }
-      
+
       // 设置请求头
       const headers = {
         'Content-Type': 'application/json',
@@ -215,7 +215,7 @@ export class OpenRouterChatService extends BaseChatService {
         'HTTP-Referer': 'maestro-app', // 应用标识
         'X-Title': 'Maestro', // 应用名称
       };
-      
+
       // 配置fetch选项，包括中止信号
       const fetchOptions: RequestInit = {
         method: 'POST',
@@ -223,14 +223,14 @@ export class OpenRouterChatService extends BaseChatService {
         body: JSON.stringify(params),
         signal: options?.signal // 使用传入的中止信号
       };
-      
+
       // 发送请求
       const response = await fetch(`${baseUrl}/chat/completions`, fetchOptions);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         let errorDetail = errorText;
-        
+
         // 尝试解析错误响应为JSON以获取更多细节
         try {
           const errorJson = JSON.parse(errorText);
@@ -240,23 +240,23 @@ export class OpenRouterChatService extends BaseChatService {
         } catch (e) {
           // 如果不是有效的JSON，使用原始错误文本
         }
-        
+
         throw new Error(`OpenRouter API错误: ${response.status} - ${errorDetail}`);
       }
-      
+
       // 读取流
       const reader = response.body?.getReader();
       if (!reader) {
         throw new Error('无法获取响应流');
       }
-      
+
       // 创建文本解码器
       const decoder = new TextDecoder();
       let buffer = '';
-      
+
       // 用于记录完整响应内容
       let completeResponse = '';
-      
+
       // 读取流
       while (true) {
         // 检查是否中断
@@ -264,54 +264,54 @@ export class OpenRouterChatService extends BaseChatService {
           reader.cancel();
           break;
         }
-        
+
         const { done, value } = await reader.read();
-        
+
         if (done) {
           callbacks.onFinish?.();
           break;
         }
-        
+
         // 解码新的数据块
         buffer += decoder.decode(value, { stream: true });
-        
+
         // 按行分割并处理每一行
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
-        
+
         for (const line of lines) {
           if (line.trim() === '') continue;
-          
+
           // 处理SSE注释行（OpenRouter偶尔发送防超时注释）
           if (line.startsWith(':')) {
             continue;
           }
-          
+
           if (!line.startsWith('data: ')) continue;
-          
+
           const data = line.substring(6);
           if (data === '[DONE]') continue;
-          
+
           try {
             const json = JSON.parse(data);
-            
+
             // 检查json对象是否有效且包含choices数组
             if (!json || !json.choices || !Array.isArray(json.choices) || json.choices.length === 0) {
               continue;
             }
-            
+
             const delta = json.choices[0]?.delta;
-            
+
             // 如果delta不存在，可能是其他格式的消息，跳过处理
             if (!delta) {
               continue;
             }
-            
+
             if (delta?.content) {
               callbacks.onContent?.(delta.content);
               completeResponse += delta.content; // 累积完整响应
             }
-            
+
             // 处理工具调用
             if (delta?.tool_calls && delta.tool_calls.length > 0) {
               for (const toolCall of delta.tool_calls) {
@@ -335,39 +335,9 @@ export class OpenRouterChatService extends BaseChatService {
       if (error instanceof Error && error.name === 'AbortError') {
         return;
       }
-      
+
       console.error('OpenRouter 流式API调用失败:', error);
       callbacks.onError?.(error instanceof Error ? error : new Error(String(error)));
-    }
-  }
-
-  /**
-   * 测试连接
-   * @param apiKey API密钥
-   * @param baseUrl 可选的基础URL
-   */
-  async testConnection(apiKey: string, baseUrl?: string): Promise<boolean> {
-    try {
-      const url = (baseUrl || 'https://openrouter.ai/api/v1') + '/models';
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'HTTP-Referer': 'maestro-app',
-          'X-Title': 'Maestro',
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`API错误: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return Array.isArray(data.data);
-    } catch (error) {
-      console.error('OpenRouter连接测试失败:', error);
-      return false;
     }
   }
 

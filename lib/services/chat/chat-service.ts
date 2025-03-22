@@ -113,13 +113,6 @@ export interface IChatService {
     callbacks: ChatStreamCallbacks,
     options?: ChatRequestOptions
   ): Promise<void>;
-
-  /**
-   * 测试连接
-   * @param apiKey API密钥
-   * @param baseUrl 可选的基础URL
-   */
-  testConnection(apiKey: string, baseUrl?: string): Promise<boolean>;
 }
 
 /**
@@ -155,13 +148,6 @@ export abstract class BaseChatService implements IChatService {
   ): Promise<void>;
 
   /**
-   * 测试连接
-   * @param apiKey API密钥
-   * @param baseUrl 可选的基础URL
-   */
-  abstract testConnection(apiKey: string, baseUrl?: string): Promise<boolean>;
-
-  /**
    * 应用最大轮次限制
    * 将消息按照user-assistant对组织为轮次，并只保留最近的maxTurns轮
    * @param apiMessages 消息数组
@@ -189,38 +175,38 @@ export abstract class BaseChatService implements IChatService {
     if (regularMessages.length === 0) {
       return apiMessages;
     }
-    
+
     // 分离最新的一条消息（通常是尚未回复的用户消息）
     const latestMessage = regularMessages[regularMessages.length - 1];
     const previousMessages = regularMessages.slice(0, regularMessages.length - 1);
-    
+
     // 2. 如果排除系统消息和最新消息后的消息数量小于maxTurns*2，直接返回原始消息
     if (previousMessages.length <= maxTurns * 2) {
       console.log(`历史消息数量(${previousMessages.length})不超过限制(${maxTurns * 2})，不需要裁剪`);
       console.log('apiMessages', apiMessages);
       return apiMessages;
     }
-    
+
     // 3. 保留系统消息 + 最近的maxTurns轮完整对话 + 最新消息
     console.log(`应用maxTurns限制：从${previousMessages.length}条历史消息中保留最新的${maxTurns * 2}条`);
-    
+
     // 从后往前取maxTurns*2条消息
     const keptMessages = previousMessages.slice(-maxTurns * 2);
-    
+
     // 构建最终的消息数组
     const result: any[] = [];
-    
+
     // 添加系统消息（如果有）
     if (systemMsg) {
       result.push(systemMsg);
     }
-    
+
     // 添加保留的历史消息
     result.push(...keptMessages);
-    
+
     // 添加最新消息
     result.push(latestMessage);
-    
+
     console.log(`消息数量限制后: ${result.length}条消息将被发送到模型`);
     return result;
   }
