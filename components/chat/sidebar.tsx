@@ -1,45 +1,44 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/lib/auth';
 import { useChatStore } from '@/lib/chat-store';
-import { 
-  Trash2, 
-  LogOut, 
-  User, 
-  Settings, 
-  ChevronUp, 
-  Languages, 
-  LifeBuoy, 
-  Cloud,
-  MessageCirclePlus,
-  MessageSquare
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
-import { useRouter } from 'next/navigation';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
 import { useAppStore } from '@/lib/store';
+import {
+  ChevronUp,
+  Cloud,
+  LifeBuoy,
+  LogOut,
+  MessageCirclePlus,
+  MessageSquare,
+  Paintbrush,
+  Settings,
+  Trash2,
+  User
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 
 export function ChatSidebar() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { setSidebarOpen } = useAppStore();
-  
-  const { 
-    conversations, 
-    activeConversationId, 
-    createConversation, 
+
+  const {
+    conversations,
+    activeConversationId,
+    createConversation,
     setActiveConversation,
-    deleteConversation 
+    deleteConversation
   } = useChatStore();
 
   // 当下拉菜单状态变化时，通知侧边栏组件
@@ -54,7 +53,7 @@ export function ChatSidebar() {
     };
 
     notifySidebar();
-    
+
     return () => {
       // 组件卸载时，确保不再阻止侧边栏关闭
       window.dispatchEvent(
@@ -95,7 +94,7 @@ export function ChatSidebar() {
   // 处理下拉菜单状态变化
   const handleDropdownOpenChange = (open: boolean) => {
     setDropdownOpen(open);
-    
+
     // 确保下拉菜单打开时侧边栏保持打开状态
     if (open) {
       setSidebarOpen(true);
@@ -106,8 +105,8 @@ export function ChatSidebar() {
     <div className="flex h-full flex-col py-3">
       {/* 顶部按钮 */}
       <div className="px-4 py-2">
-        <Button 
-          onClick={handleNewChat} 
+        <Button
+          onClick={handleNewChat}
           className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 transition-all duration-200 font-medium"
           size="sm"
           variant="default"
@@ -133,11 +132,10 @@ export function ChatSidebar() {
             conversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className={`group relative flex items-center w-full rounded-md transition-all duration-150 ${
-                  activeConversationId === conversation.id
-                    ? 'bg-secondary text-accent-foreground'
-                    : 'hover:bg-secondary/50'
-                }`}
+                className={`group relative flex items-center w-full rounded-md transition-all duration-150 ${activeConversationId === conversation.id
+                  ? 'bg-secondary text-accent-foreground'
+                  : 'hover:bg-secondary/50'
+                  }`}
               >
                 <button
                   onClick={() => handleSelectConversation(conversation.id)}
@@ -165,7 +163,7 @@ export function ChatSidebar() {
         <div className="mx-1"></div>
         <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
           <DropdownMenuTrigger asChild>
-            <button 
+            <button
               className="flex items-center gap-3 w-full rounded-xl px-2 py-2 hover:bg-secondary/50 transition-all duration-150 border border-border/50"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
@@ -177,16 +175,15 @@ export function ChatSidebar() {
                   {user?.email || '未登录'}
                 </p>
               </div>
-              <ChevronUp 
-                size={14} 
-                className={`text-muted-foreground transition-transform duration-300 ${
-                  dropdownOpen ? 'rotate-180' : 'rotate-0'
-                }`} 
+              <ChevronUp
+                size={14}
+                className={`text-muted-foreground transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : 'rotate-0'
+                  }`}
               />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            align="start" 
+          <DropdownMenuContent
+            align="start"
             className="w-64 rounded-md shadow-md p-1"
             // 确保下拉菜单显示时不关闭侧边栏
             onCloseAutoFocus={(e) => {
@@ -197,17 +194,14 @@ export function ChatSidebar() {
             <DropdownMenuSeparator className="bg-card mx-2 h-px" />
             <DropdownMenuItem onClick={handleSettings} className="rounded-md cursor-pointer gap-2 py-1.5">
               <Settings size={16} className="text-primary" />
-              <span>设置</span>
+              <span>应用设置</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-card mx-2 h-px" />
-            <DropdownMenuItem className="rounded-md cursor-pointer gap-2 py-1.5">
-              <Languages size={16} className="text-primary" />
-              <span>语言</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-card mx-2 h-px" />
-            <DropdownMenuItem className="rounded-md cursor-pointer gap-2 py-1.5">
-              <ThemeToggle />
-              <span>主题</span>
+            <DropdownMenuItem onClick={() => {
+              router.push('/settings?tab=appearance');
+            }} className="rounded-md cursor-pointer gap-2 py-1.5">
+              <Paintbrush size={16} className="text-primary" />
+              <span>外观设置</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-card mx-2 h-px" />
             <DropdownMenuItem className="rounded-md cursor-pointer gap-2 py-1.5">
@@ -220,7 +214,7 @@ export function ChatSidebar() {
               <span>帮助与支持</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-card mx-2 h-px" />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={handleLogout}
               className="rounded-md cursor-pointer gap-2 text-destructive focus:text-destructive py-1.5"
             >

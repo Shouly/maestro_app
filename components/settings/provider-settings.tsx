@@ -7,8 +7,13 @@ import { Label } from '@/components/ui/label';
 import { PROVIDER_PRESETS } from '@/lib/provider-presets';
 import { useProviderStore } from '@/lib/provider-store';
 import { isValidUrl } from '@/lib/utils';
-import { AlertCircle, Check, CheckCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Check, CheckCircle, Loader2, Settings, Shield, ExternalLink, RefreshCcw, ServerCog } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { ModelSelector } from '../chat/model-selector';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { motion } from 'framer-motion';
+import { Separator } from '@/components/ui/separator';
 
 export function ProviderSettings() {
     // 状态管理
@@ -20,6 +25,9 @@ export function ProviderSettings() {
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [successMessage, setSuccessMessage] = useState<string>('');
     const [refreshCounter, setRefreshCounter] = useState(0);
+    const [selectedTab, setSelectedTab] = useState<string>('基本设置');
+    const [defaultModelValue, setDefaultModelValue] = useState<string>('');
+    const [isRefreshingModels, setIsRefreshingModels] = useState<boolean>(false);
 
     // 初始化状态跟踪
     const initializationRef = useRef(false);
@@ -28,12 +36,15 @@ export function ProviderSettings() {
     const {
         configuredProviders,
         defaultProviderId,
+        defaultModelId,
         addProvider,
         updateProvider,
         setDefaultProvider,
+        setDefaultModel,
         getPredefinedProvider,
         getProviderConfig,
-        testProviderConnection
+        testProviderConnection,
+        fetchProviderModels
     } = useProviderStore();
 
     // 初始化时加载一次模型列表
@@ -70,21 +81,35 @@ export function ProviderSettings() {
         console.log('组件状态更新:', {
             refreshCounter,
             providersCount: configuredProviders.length,
-            defaultProviderId
+            defaultProviderId,
+            defaultModelId
         });
-    }, [refreshCounter, configuredProviders, defaultProviderId]);
+        
+        // 设置默认模型选择器的值
+        if (defaultProviderId && defaultModelId) {
+            setDefaultModelValue(`${defaultProviderId}:${defaultModelId}`);
+        } else {
+            setDefaultModelValue('');
+        }
+    }, [refreshCounter, configuredProviders, defaultProviderId, defaultModelId]);
 
     // 选择供应商
     const selectProvider = (providerId: string) => {
         setSelectedProviderId(providerId);
         setErrorMessage('');
         setSuccessMessage('');
+        setSelectedTab('基本设置');
 
         // 查找是否已配置
         const configuredProvider = getProviderConfig(providerId);
         if (configuredProvider) {
             setApiKey(configuredProvider.apiKey);
             setBaseUrl(configuredProvider.baseUrl || '');
+            
+            // 如果供应商已配置但没有加载模型列表，自动加载
+            if (!configuredProvider.customModels || configuredProvider.customModels.length === 0) {
+                fetchProviderModels(providerId).catch(console.error);
+            }
         } else {
             // 未配置，使用默认值
             setApiKey('');
@@ -173,6 +198,12 @@ export function ProviderSettings() {
 
             if (isSuccess) {
                 setSuccessMessage('验证成功，API密钥有效。');
+                
+                // 验证成功后自动获取模型列表
+                await fetchProviderModels(selectedProviderId);
+                
+                // 自动切换到模型设置选项卡
+                setSelectedTab('模型设置');
             } else {
                 setErrorMessage('API密钥无效，请检查后重试。');
             }
@@ -195,13 +226,26 @@ export function ProviderSettings() {
         }
 
         setDefaultProvider(selectedProviderId);
+        
+        // 获取该提供商的第一个模型作为默认模型
+        const provider = getPredefinedProvider(selectedProviderId);
+        if (provider && provider.models.length > 0) {
+            setDefaultModel(provider.models[0].id);
+        }
+        
         setSuccessMessage('已设置为默认供应商');
         setRefreshCounter(prev => prev + 1);
     };
 
     // 获取供应商是否已配置
     const isProviderConfigured = (providerId: string) => {
-        return configuredProviders.some(p => p.providerId === providerId);
+        return configuredProviders.some(p => p.providerId === providerId && p.apiKey.trim() !== '');
+    };
+
+    // 获取供应商是否活跃
+    const isProviderActive = (providerId: string) => {
+        const provider = getProviderConfig(providerId);
+        return provider ? provider.isActive : false;
     };
 
     // 获取供应商图标
@@ -210,8 +254,8 @@ export function ProviderSettings() {
 
         if (predefinedProvider?.logoUrl) {
             return (
-                <div className="w-8 h-8 rounded-md flex items-center justify-center bg-muted">
-                    <img src={predefinedProvider.logoUrl} alt={predefinedProvider.name} className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-md flex items-center justify-center bg-background border">
+                    <img src={predefinedProvider.logoUrl} alt={predefinedProvider.name} className="w-6 h-6" />
                 </div>
             );
         }
@@ -221,161 +265,350 @@ export function ProviderSettings() {
         const initial = name.charAt(0).toUpperCase();
 
         return (
-            <div className="w-8 h-8 rounded-md flex items-center justify-center bg-primary text-primary-foreground">
+            <div className="w-10 h-10 rounded-md flex items-center justify-center bg-primary/10 text-primary border border-primary/20">
                 {initial}
             </div>
         );
     };
 
+    // 处理默认模型变更
+    const handleDefaultModelChange = (value: string) => {
+        setDefaultModelValue(value);
+        
+        // 将value拆分为providerId和modelId
+        const [providerId, modelId] = value.split(':');
+        
+        // 更新默认设置
+        setDefaultProvider(providerId);
+        setDefaultModel(modelId);
+        
+        setSuccessMessage('已设置默认模型');
+        setTimeout(() => {
+            if (successMessage === '已设置默认模型') {
+                setSuccessMessage('');
+            }
+        }, 2000);
+    };
+
+    // 刷新模型列表
+    const handleRefreshModels = async () => {
+        if (!selectedProviderId) return;
+        
+        setIsRefreshingModels(true);
+        try {
+            await fetchProviderModels(selectedProviderId);
+            setSuccessMessage('模型列表已更新');
+            setTimeout(() => {
+                if (successMessage === '模型列表已更新') {
+                    setSuccessMessage('');
+                }
+            }, 2000);
+        } catch (error) {
+            setErrorMessage('无法获取模型列表');
+        } finally {
+            setIsRefreshingModels(false);
+        }
+    };
+
     return (
-        <Card className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* 左侧供应商列表 */}
-                <div className="md:col-span-1 border-r pr-4">
-                    <h3 className="text-sm font-medium mb-3">供应商列表</h3>
-                    <div className="space-y-1">
-                        {PROVIDER_PRESETS.map((provider) => {
-                            const isConfigured = isProviderConfigured(provider.id);
-                            const isSelected = selectedProviderId === provider.id;
-                            const isDefault = defaultProviderId === provider.id;
-
-                            return (
-                                <div
-                                    key={provider.id}
-                                    className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${isSelected ? 'bg-muted' : 'hover:bg-muted/50'
-                                        }`}
-                                    onClick={() => selectProvider(provider.id)}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        {getProviderLogo(provider.id)}
-                                        <div>
-                                            <div className="font-medium flex items-center gap-2">
-                                                {provider.name}
-                                                {isDefault && (
-                                                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                                                        默认
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {isConfigured && (
-                                                <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                                    <CheckCircle className="h-3 w-3 text-green-500" />
-                                                    已配置
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                    <ServerCog className="h-5 w-5 mr-2 text-primary" />
+                    <h2 className="text-xl font-semibold">AI 供应商</h2>
                 </div>
+                
+                <div>
+                    {selectedProviderId && isProviderConfigured(selectedProviderId) && defaultProviderId !== selectedProviderId && (
+                        <Button
+                            variant="outline"
+                            onClick={handleSetDefault}
+                            className="mr-2"
+                            size="sm"
+                        >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            设为默认
+                        </Button>
+                    )}
+                </div>
+            </div>
+            
+            <p className="text-muted-foreground -mt-1">
+                配置AI供应商连接以开始使用应用程序。至少需要一个配置好的供应商。
+            </p>
+            
+            <Card className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    {/* 左侧供应商列表 */}
+                    <div className="md:col-span-3">
+                        <h3 className="text-base font-medium mb-4 flex items-center text-muted-foreground">
+                            <Settings className="h-4 w-4 mr-2" />
+                            供应商列表
+                        </h3>
+                        <div className="space-y-2.5">
+                            {PROVIDER_PRESETS.map((provider) => {
+                                const isConfigured = isProviderConfigured(provider.id);
+                                const isActive = isProviderActive(provider.id);
+                                const isSelected = selectedProviderId === provider.id;
+                                const isDefault = defaultProviderId === provider.id;
 
-                {/* 右侧配置面板 */}
-                <div className="md:col-span-2">
-                    {selectedProviderId && (
-                        <>
-                            <h3 className="text-lg font-medium mb-4">
-                                {getPredefinedProvider(selectedProviderId)?.name || '供应商'} 配置
-                            </h3>
-
-                            <div className="space-y-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="api-key">API密钥</Label>
-                                    <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                            <Input
-                                                id="api-key"
-                                                type="password"
-                                                value={apiKey}
-                                                onChange={(e) => handleApiKeyChange(e.target.value)}
-                                                placeholder="输入您的API密钥"
-                                            />
+                                return (
+                                    <motion.div
+                                        key={provider.id}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        transition={{ duration: 0.2 }}
+                                        className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 border 
+                                            ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30 hover:bg-muted/30'}`}
+                                        onClick={() => selectProvider(provider.id)}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {getProviderLogo(provider.id)}
+                                            <div className="min-w-0">
+                                                <div className="font-medium text-sm flex items-center gap-2 truncate">
+                                                    {provider.name}
+                                                </div>
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    {isDefault && (
+                                                        <Badge variant="outline" className="text-[10px] h-4 px-1 bg-primary/10 text-primary border-primary/20">
+                                                            默认
+                                                        </Badge>
+                                                    )}
+                                                    {isConfigured && (
+                                                        <Badge variant="outline" className="text-[10px] h-4 px-1 bg-green-50 text-green-600 border-green-200">
+                                                            已配置
+                                                        </Badge>
+                                                    )}
+                                                    {!isConfigured && (
+                                                        <Badge variant="outline" className="text-[10px] h-4 px-1 bg-muted/40 text-muted-foreground border-muted">
+                                                            未配置
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        {selectedProviderId === 'openai' &&
-                                            '请在OpenAI开发者控制台获取API密钥：https://platform.openai.com/api-keys'}
-                                        {selectedProviderId === 'anthropic' &&
-                                            '请在Anthropic控制台获取API密钥：https://console.anthropic.com/'}
-                                        {selectedProviderId === 'gemini' &&
-                                            '请在Google AI Studio获取API密钥：https://makersuite.google.com/app/apikey'}
-                                    </p>
-                                </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="base-url">基础URL（可选）</Label>
-                                    <Input
-                                        id="base-url"
-                                        type="text"
-                                        value={baseUrl}
-                                        onChange={(e) => handleBaseUrlChange(e.target.value)}
-                                        placeholder="例如: https://api.openai.com/v1"
-                                        className={!isBaseUrlValid ? 'border-red-500' : ''}
-                                    />
-                                    {!isBaseUrlValid && (
-                                        <p className="text-sm text-red-500">请输入有效的URL</p>
-                                    )}
-                                    <p className="text-sm text-muted-foreground">
-                                        如果为空，将使用供应商的默认基础URL
-                                    </p>
+                    {/* 右侧配置面板 */}
+                    <div className="md:col-span-9">
+                        {selectedProviderId ? (
+                            <motion.div
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.2 }}
+                                key={selectedProviderId}
+                            >
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-xl font-medium flex items-center">
+                                        {getProviderLogo(selectedProviderId)}
+                                        <span className="ml-3">{getPredefinedProvider(selectedProviderId)?.name || '供应商'}</span>
+                                    </h3>
                                 </div>
+                                
+                                <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-6">
+                                    <TabsList className="mb-4 w-full max-w-md">
+                                        <TabsTrigger value="基本设置" className="flex-1">基本设置</TabsTrigger>
+                                        <TabsTrigger value="模型设置" className="flex-1" disabled={!isProviderConfigured(selectedProviderId)}>
+                                            模型设置
+                                        </TabsTrigger>
+                                    </TabsList>
+                                    
+                                    <TabsContent value="基本设置" className="space-y-6">
+                                        <Card className="p-6 border border-border/60 bg-background shadow-sm">
+                                            <div className="grid gap-6">
+                                                <div className="grid gap-3">
+                                                    <Label htmlFor="api-key" className="flex items-center text-base">
+                                                        <Shield className="h-4 w-4 mr-2" />
+                                                        API密钥
+                                                    </Label>
+                                                    <div className="flex gap-2">
+                                                        <div className="relative flex-1">
+                                                            <Input
+                                                                id="api-key"
+                                                                type="password"
+                                                                value={apiKey}
+                                                                onChange={(e) => handleApiKeyChange(e.target.value)}
+                                                                placeholder="输入您的API密钥"
+                                                                className="pr-24"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground flex items-center">
+                                                        {selectedProviderId === 'openai' && (
+                                                            <motion.span
+                                                                initial={{ opacity: 0 }}
+                                                                animate={{ opacity: 1 }}
+                                                                transition={{ duration: 0.3 }}
+                                                                className="flex items-center"
+                                                            >
+                                                                请在
+                                                                <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary mx-1 flex items-center hover:underline">
+                                                                    OpenAI开发者控制台
+                                                                    <ExternalLink className="h-3 w-3 ml-0.5" />
+                                                                </a>
+                                                                获取API密钥
+                                                            </motion.span>
+                                                        )}
+                                                        {selectedProviderId === 'anthropic' && (
+                                                            <motion.span
+                                                                initial={{ opacity: 0 }}
+                                                                animate={{ opacity: 1 }}
+                                                                transition={{ duration: 0.3 }}
+                                                                className="flex items-center"
+                                                            >
+                                                                请在
+                                                                <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-primary mx-1 flex items-center hover:underline">
+                                                                    Anthropic控制台
+                                                                    <ExternalLink className="h-3 w-3 ml-0.5" />
+                                                                </a>
+                                                                获取API密钥
+                                                            </motion.span>
+                                                        )}
+                                                        {selectedProviderId === 'gemini' && (
+                                                            <motion.span
+                                                                initial={{ opacity: 0 }}
+                                                                animate={{ opacity: 1 }}
+                                                                transition={{ duration: 0.3 }}
+                                                                className="flex items-center"
+                                                            >
+                                                                请在
+                                                                <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary mx-1 flex items-center hover:underline">
+                                                                    Google AI Studio
+                                                                    <ExternalLink className="h-3 w-3 ml-0.5" />
+                                                                </a>
+                                                                获取API密钥
+                                                            </motion.span>
+                                                        )}
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid gap-3">
+                                                    <Label htmlFor="base-url" className="flex items-center text-base">
+                                                        基础URL（可选）
+                                                    </Label>
+                                                    <Input
+                                                        id="base-url"
+                                                        type="text"
+                                                        value={baseUrl}
+                                                        onChange={(e) => handleBaseUrlChange(e.target.value)}
+                                                        placeholder="例如: https://api.openai.com/v1"
+                                                        className={!isBaseUrlValid ? 'border-red-500' : ''}
+                                                    />
+                                                    {!isBaseUrlValid && (
+                                                        <p className="text-sm text-red-500 flex items-center">
+                                                            <AlertCircle className="h-3 w-3 mr-1" />
+                                                            请输入有效的URL
+                                                        </p>
+                                                    )}
+                                                    <p className="text-sm text-muted-foreground">
+                                                        如果为空，将使用供应商的默认基础URL
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            
+                                            <Separator className="my-6" />
+                                            
+                                            <div className="flex justify-end">
+                                                <Button
+                                                    variant="default"
+                                                    onClick={handleTestConnection}
+                                                    className="gap-2 w-full sm:w-auto"
+                                                    disabled={isVerifying || !apiKey.trim()}
+                                                >
+                                                    {isVerifying ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <Check className="h-4 w-4" />
+                                                    )}
+                                                    测试API连接
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    </TabsContent>
+                                    
+                                    <TabsContent value="模型设置" className="space-y-6">
+                                        <Card className="p-6 border border-border/60 bg-background shadow-sm">
+                                            <h4 className="text-base font-medium mb-4">默认模型设置</h4>
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                选择默认使用的AI模型，将用于所有新建的对话。
+                                            </p>
+                                            <div className="mb-4">
+                                                <ModelSelector 
+                                                    isDefaultSelector={true}
+                                                    showOnlyConfigured={true}
+                                                    value={defaultModelValue}
+                                                    onChange={handleDefaultModelChange}
+                                                    searchable={true}
+                                                />
+                                            </div>
+                                            <p className="text-xs text-muted-foreground italic">
+                                                注意：如果选择了不同供应商的模型，默认供应商也将相应变更。
+                                            </p>
+                                        </Card>
+                                        
+                                        <Card className="p-6 border border-border/60 bg-background shadow-sm">
+                                            <h4 className="text-base font-medium mb-4">模型列表管理</h4>
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                点击刷新按钮从API获取该供应商支持的最新模型列表。
+                                            </p>
+                                            <Button
+                                                variant="outline"
+                                                onClick={handleRefreshModels}
+                                                className="gap-2"
+                                                size="sm"
+                                                disabled={isRefreshingModels}
+                                            >
+                                                {isRefreshingModels ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <RefreshCcw className="h-4 w-4" />
+                                                )}
+                                                刷新模型列表
+                                            </Button>
+                                        </Card>
+                                    </TabsContent>
+                                </Tabs>
 
                                 {errorMessage && (
-                                    <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="p-3 bg-red-50 border border-red-200 rounded-md"
+                                    >
                                         <p className="text-sm text-red-600 flex items-center gap-2">
                                             <AlertCircle className="h-4 w-4" />
                                             {errorMessage}
                                         </p>
-                                    </div>
+                                    </motion.div>
                                 )}
 
                                 {successMessage && (
-                                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="p-3 bg-green-50 border border-green-200 rounded-md"
+                                    >
                                         <p className="text-sm text-green-600 flex items-center gap-2">
                                             <CheckCircle className="h-4 w-4" />
                                             {successMessage}
                                         </p>
-                                    </div>
+                                    </motion.div>
                                 )}
-
-                                <div className="flex justify-between items-center pt-2">
-                                    <div className="flex gap-2">
-                                        {isProviderConfigured(selectedProviderId) && defaultProviderId !== selectedProviderId && (
-                                            <Button
-                                                variant="outline"
-                                                onClick={handleSetDefault}
-                                                className="gap-2"
-                                                size="sm"
-                                            >
-                                                <Check className="h-4 w-4" />
-                                                设为默认
-                                            </Button>
-                                        )}
-                                        
-                                        {apiKey.trim() && (
-                                            <Button
-                                                variant="default"
-                                                onClick={handleTestConnection}
-                                                className="gap-2"
-                                                size="sm"
-                                                disabled={isVerifying || !apiKey.trim()}
-                                            >
-                                                {isVerifying ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <AlertCircle className="h-4 w-4" />
-                                                )}
-                                                测试模型API
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
+                            </motion.div>
+                        ) : (
+                            <div className="flex items-center justify-center h-40 text-muted-foreground">
+                                请从左侧选择一个供应商进行配置
                             </div>
-                        </>
-                    )}
+                        )}
+                    </div>
                 </div>
-            </div>
-        </Card>
+            </Card>
+        </div>
     );
 } 
