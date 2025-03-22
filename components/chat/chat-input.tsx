@@ -26,6 +26,8 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // 获取已配置的提供商列表
   const { configuredProviders, setDefaultProvider, setDefaultModel } = useProviderStore();
+  // 添加助手消息ID引用
+  const assistantMessageIdRef = useRef<string | null>(null);
 
   // 自动调整输入框高度
   useEffect(() => {
@@ -108,59 +110,90 @@ export function ChatInput({ isCentered = false }: ChatInputProps) {
         {
           onStart: () => {
             // 创建一个空的助手消息占位符
-            addMessage({
-              role: 'assistant',
+            const newAssistantMessage = {
+              role: 'assistant' as const,
               content: '',
               timestamp: Date.now(),
-            });
+            };
+            
+            // 添加消息并获取生成的ID
+            addMessage(newAssistantMessage);
+            
+            // 获取最新的对话以获取新添加消息的ID
+            const updatedConversation = useChatStore.getState().getActiveConversation();
+            if (updatedConversation && updatedConversation.messages.length > 0) {
+              // 保存助手消息ID以供后续更新使用
+              assistantMessageIdRef.current = updatedConversation.messages[updatedConversation.messages.length - 1].id;
+            }
+            
             currentResponse = '';
           },
           onContent: (content) => {
+            if (!assistantMessageIdRef.current) return;
+            
             currentResponse += content;
             
-            // 更新助手消息
-            const messages = [...activeConversation.messages];
-            const lastMessageIndex = messages.length;
+            // 更新助手消息，使用保存的ID
+            const currentConversation = useChatStore.getState().getActiveConversation();
+            if (!currentConversation) return;
             
-            useChatStore.getState().updateConversation(
-              activeConversation.id,
-              {
-                messages: [
-                  ...messages.slice(0, lastMessageIndex),
-                  {
-                    id: messages[lastMessageIndex - 1].id,
-                    role: 'assistant',
-                    content: currentResponse,
-                    timestamp: Date.now(),
-                  },
-                ],
-              }
+            // 查找要更新的消息
+            const messageIndex = currentConversation.messages.findIndex(
+              msg => msg.id === assistantMessageIdRef.current
             );
+            
+            if (messageIndex !== -1) {
+              // 创建更新后的消息数组
+              const updatedMessages = [...currentConversation.messages];
+              updatedMessages[messageIndex] = {
+                id: assistantMessageIdRef.current,
+                role: 'assistant',
+                content: currentResponse,
+                timestamp: Date.now(),
+              };
+              
+              // 更新对话
+              useChatStore.getState().updateConversation(
+                currentConversation.id,
+                { messages: updatedMessages }
+              );
+            }
           },
           onError: (error) => {
             console.error('获取AI响应时出错:', error);
             
-            // 在助手消息中显示错误
-            const messages = [...activeConversation.messages];
-            const lastMessageIndex = messages.length;
+            if (!assistantMessageIdRef.current) return;
             
-            if (lastMessageIndex > 0 && messages[lastMessageIndex - 1].role === 'assistant') {
+            // 在助手消息中显示错误
+            const currentConversation = useChatStore.getState().getActiveConversation();
+            if (!currentConversation) return;
+            
+            // 查找要更新的消息
+            const messageIndex = currentConversation.messages.findIndex(
+              msg => msg.id === assistantMessageIdRef.current
+            );
+            
+            if (messageIndex !== -1) {
+              // 创建更新后的消息数组
+              const updatedMessages = [...currentConversation.messages];
+              updatedMessages[messageIndex] = {
+                id: assistantMessageIdRef.current,
+                role: 'assistant',
+                content: currentResponse + '\n\n[错误: ' + error.message + ']',
+                timestamp: Date.now(),
+              };
+              
+              // 更新对话
               useChatStore.getState().updateConversation(
-                activeConversation.id,
-                {
-                  messages: [
-                    ...messages.slice(0, lastMessageIndex),
-                    {
-                      id: messages[lastMessageIndex - 1].id,
-                      role: 'assistant',
-                      content: currentResponse + '\n\n[错误: ' + error.message + ']',
-                      timestamp: Date.now(),
-                    },
-                  ],
-                }
+                currentConversation.id,
+                { messages: updatedMessages }
               );
             }
           },
+          onFinish: () => {
+            // 完成时清空ID引用
+            assistantMessageIdRef.current = null;
+          }
         },
         {
           modelId: activeConversation.modelId,
